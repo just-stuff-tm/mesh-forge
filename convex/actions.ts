@@ -25,7 +25,7 @@ export const dispatchGithubBuild = action({
 						"Content-Type": "application/json",
 					},
 					body: JSON.stringify({
-						ref: "master", // or make this configurable
+						ref: "main", // or make this configurable
 						inputs: {
 							target: args.target,
 							flags: args.flags,
