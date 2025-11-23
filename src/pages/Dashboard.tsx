@@ -1,22 +1,25 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useMutation, useQuery } from "convex/react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import BuildsPanel from "@/components/BuildsPanel";
 import ProfileEditor from "@/components/ProfileEditor";
 import { Button } from "@/components/ui/button";
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Doc, Id } from "../../convex/_generated/dataModel";
 
 export default function Dashboard() {
 	const { signOut } = useAuthActions();
 	const profiles = useQuery(api.profiles.list);
 	const triggerBuild = useMutation(api.builds.triggerBuild);
+	const removeProfile = useMutation(api.profiles.remove);
 	const [isEditing, setIsEditing] = useState(false);
-	const [editingProfile, setEditingProfile] = useState<any>(null);
+	const [editingProfile, setEditingProfile] = useState<Doc<"profiles"> | null>(
+		null,
+	);
 
-	const handleEdit = (profile: any) => {
+	const handleEdit = (profile: Doc<"profiles">) => {
 		setEditingProfile(profile);
 		setIsEditing(true);
 	};
@@ -34,6 +37,30 @@ export default function Dashboard() {
 			});
 		} catch (error) {
 			toast.error("Build failed", {
+				description: String(error),
+			});
+		}
+	};
+
+	const handleDelete = async (
+		profileId: Id<"profiles">,
+		profileName: string,
+	) => {
+		if (
+			!confirm(
+				`Are you sure you want to delete "${profileName}"? This action cannot be undone.`,
+			)
+		) {
+			return;
+		}
+
+		try {
+			await removeProfile({ id: profileId });
+			toast.success("Profile deleted", {
+				description: `"${profileName}" has been deleted successfully.`,
+			});
+		} catch (error) {
+			toast.error("Delete failed", {
 				description: String(error),
 			});
 		}
@@ -88,6 +115,13 @@ export default function Dashboard() {
 									</Button>
 									<Button size="sm" onClick={() => handleBuild(profile._id)}>
 										Build
+									</Button>
+									<Button
+										size="sm"
+										variant="destructive"
+										onClick={() => handleDelete(profile._id, profile.name)}
+									>
+										<Trash2 className="w-4 h-4" />
 									</Button>
 								</div>
 
