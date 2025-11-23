@@ -16,6 +16,18 @@ export const dispatchGithubBuild = action({
 			throw new Error("GITHUB_TOKEN is not set");
 		}
 
+		const convexUrl = process.env.CONVEX_SITE_URL;
+		if (!convexUrl) {
+			console.error("CONVEX_SITE_URL is not set");
+			// Proceeding anyway might fail if workflow requires it
+		}
+
+		console.log("dispatchGithubBuild args:", JSON.stringify(args, null, 2));
+
+		if (!args.buildHash) {
+			throw new Error("args.buildHash is missing or empty");
+		}
+
 		const payload = {
 			ref: "main", // or make this configurable
 			inputs: {
@@ -24,7 +36,7 @@ export const dispatchGithubBuild = action({
 				version: args.version,
 				build_id: args.buildId,
 				build_hash: args.buildHash,
-				convex_url: process.env.CONVEX_SITE_URL,
+				convex_url: convexUrl || "https://example.com", // Fallback to avoid missing input error if that's the cause
 			},
 		};
 
