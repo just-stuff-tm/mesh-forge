@@ -24,6 +24,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": ["src", "vendor/web-flasher/public/data"],
 	"references": [{ "path": "./tsconfig.node.json" }]
 }
