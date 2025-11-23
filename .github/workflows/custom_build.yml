@@ -11,6 +11,9 @@ on:
         description: 'Build flags (e.g. -DMESHTASTIC_EXCLUDE_MQTT)'
         required: false
         type: string
+      version:
+        description: 'Firmware Version (Tag/Branch)'
+        required: true
 
 jobs:
   build:
@@ -23,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: meshtastic/firmware
-          ref: develop
+          ref: ${{ inputs.version }}
           path: firmware
           submodules: recursive
           fetch-depth: 1

@@ -9,6 +9,7 @@ export default defineSchema({
 		name: v.string(),
 		targets: v.array(v.string()), // e.g. ["tbeam", "rak4631"]
 		config: v.any(), // JSON object for flags
+		version: v.string(),
 		updatedAt: v.number(),
 	}).index("by_user", ["userId"]),
 

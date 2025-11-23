@@ -38,6 +38,7 @@ export const triggerBuild = mutation({
 				buildId: buildId,
 				target: target,
 				flags: flags,
+				version: profile.version,
 			});
 		}
 	},
@@ -120,6 +121,7 @@ export const retryBuild = mutation({
 			buildId: args.buildId,
 			target: build.target,
 			flags: flags,
+			version: profile.version,
 		});
 	},
 });

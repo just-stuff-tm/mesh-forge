@@ -71,6 +71,10 @@ export default function Dashboard() {
 								className="border border-slate-800 rounded-lg p-6 bg-slate-900/50"
 							>
 								<h3 className="text-xl font-semibold mb-2">{profile.name}</h3>
+								<p className="text-slate-400 text-sm mb-1">
+									Version:{" "}
+									<span className="text-slate-200">{profile.version}</span>
+								</p>
 								<p className="text-slate-400 text-sm mb-4">
 									Targets: {profile.targets.join(", ")}
 								</p>

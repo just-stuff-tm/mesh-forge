@@ -20,6 +20,7 @@ export const create = mutation({
 		name: v.string(),
 		targets: v.array(v.string()),
 		config: v.any(),
+		version: v.string(),
 	},
 	handler: async (ctx, args) => {
 		const userId = await getAuthUserId(ctx);
@@ -30,6 +31,7 @@ export const create = mutation({
 			name: args.name,
 			targets: args.targets,
 			config: args.config,
+			version: args.version,
 			updatedAt: Date.now(),
 		});
 	},
@@ -41,6 +43,7 @@ export const update = mutation({
 		name: v.string(),
 		targets: v.array(v.string()),
 		config: v.any(),
+		version: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const userId = await getAuthUserId(ctx);
@@ -55,6 +58,7 @@ export const update = mutation({
 			name: args.name,
 			targets: args.targets,
 			config: args.config,
+			version: args.version,
 			updatedAt: Date.now(),
 		});
 	},

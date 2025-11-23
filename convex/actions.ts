@@ -7,14 +7,15 @@ export const dispatchGithubBuild = action({
 		buildId: v.id("builds"),
 		target: v.string(),
 		flags: v.string(),
+		version: v.string(),
 	},
 	handler: async (ctx, args) => {
-		try {
-			const githubToken = process.env.GITHUB_TOKEN;
-			if (!githubToken) {
-				throw new Error("GITHUB_TOKEN is not defined");
-			}
+		const githubToken = process.env.GITHUB_TOKEN;
+		if (!githubToken) {
+			throw new Error("GITHUB_TOKEN is not set");
+		}
 
+		try {
 			const response = await fetch(
 				"https://api.github.com/repos/MeshEnvy/configurable-web-flasher/actions/workflows/custom_build.yml/dispatches",
 				{
@@ -29,6 +30,7 @@ export const dispatchGithubBuild = action({
 						inputs: {
 							target: args.target,
 							flags: args.flags,
+							version: args.version,
 						},
 					}),
 				},
