@@ -11,7 +11,6 @@ import type { Doc, Id } from '../../convex/_generated/dataModel'
 
 export default function Dashboard() {
   const profiles = useQuery(api.profiles.list)
-  const triggerBuild = useMutation(api.builds.triggerBuild)
   const removeProfile = useMutation(api.profiles.remove)
   const [isEditing, setIsEditing] = useState(false)
   const [editingProfile, setEditingProfile] = useState<Doc<'profiles'> | null>(
@@ -26,19 +25,6 @@ export default function Dashboard() {
   const handleCreate = () => {
     setEditingProfile(null)
     setIsEditing(true)
-  }
-
-  const handleBuild = async (profileId: Id<'profiles'>) => {
-    try {
-      await triggerBuild({ profileId })
-      toast.success('Build started', {
-        description: 'Check the build status below.',
-      })
-    } catch (error) {
-      toast.error('Build failed', {
-        description: String(error),
-      })
-    }
   }
 
   const handleDelete = async (
@@ -106,9 +92,6 @@ export default function Dashboard() {
                     onClick={() => handleEdit(profile)}
                   >
                     Edit
-                  </Button>
-                  <Button size="sm" onClick={() => handleBuild(profile._id)}>
-                    Build
                   </Button>
                   <Button
                     size="sm"

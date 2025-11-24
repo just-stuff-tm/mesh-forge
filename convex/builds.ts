@@ -58,17 +58,15 @@ function getR2ArtifactUrl(buildHash: string): string {
   return `https://${bucketName}.r2.cloudflarestorage.com/${buildHash}.uf2`
 }
 
-export const triggerBuild = mutation({
+export const triggerFlash = mutation({
   args: {
     profileId: v.id('profiles'),
+    target: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx)
-    if (!userId) throw new Error('Unauthorized')
-
     const profile = await ctx.db.get(args.profileId)
-    if (!profile || profile.userId !== userId) {
-      throw new Error('Unauthorized')
+    if (!profile) {
+      throw new Error('Profile not found')
     }
 
     // Convert config object to flags string
@@ -84,128 +82,125 @@ export const triggerBuild = mutation({
 
     const flagsString = flags.join(' ')
 
-    // Get targets from profileTargets
-    const profileTargets = await ctx.db
-      .query('profileTargets')
-      .withIndex('by_profile', (q) => q.eq('profileId', args.profileId))
-      .collect()
+    // Compute build hash
+    const buildHash = await computeBuildHash(
+      profile.version,
+      args.target,
+      flagsString
+    )
 
-    const targets = profileTargets.map((pt) => pt.target)
+    // Check if build already exists with this hash
+    const existingBuild = await ctx.db
+      .query('builds')
+      .withIndex('by_hash', (q) => q.eq('buildHash', buildHash))
+      .first()
 
-    // Create build records for each target
-    for (const target of targets) {
-      // Compute build hash using the generated flags
-      const buildHash = await computeBuildHash(
-        profile.version,
-        target,
-        flagsString
-      )
+    let buildId: Id<'builds'>
+    let shouldDispatch = false
 
-      console.log(
-        `Computed build hash for ${target}: ${buildHash} (Flags: ${flagsString})`
-      )
+    if (existingBuild) {
+      // Build already exists, use it
+      buildId = existingBuild._id
+    } else {
+      // Check cache for existing build
+      const cached = await ctx.db
+        .query('buildCache')
+        .withIndex('by_hash_target', (q) =>
+          q.eq('buildHash', buildHash).eq('target', args.target)
+        )
+        .first()
 
-      // Mutex logic: Check if build already exists with this hash
-      const build = await ctx.db
+      if (cached) {
+        // Use cached artifact, create build with success status
+        const artifactUrl = getR2ArtifactUrl(buildHash)
+        buildId = await ctx.db.insert('builds', {
+          target: args.target,
+          githubRunId: 0,
+          status: 'success',
+          artifactUrl: artifactUrl,
+          startedAt: Date.now(),
+          completedAt: Date.now(),
+          buildHash: buildHash,
+        })
+      } else {
+        // Not cached, create new build and dispatch workflow
+        buildId = await ctx.db.insert('builds', {
+          target: args.target,
+          githubRunId: 0,
+          status: 'queued',
+          startedAt: Date.now(),
+          buildHash: buildHash,
+        })
+        shouldDispatch = true
+      }
+
+      // Handle race condition
+      const raceCheckBuild = await ctx.db
         .query('builds')
         .withIndex('by_hash', (q) => q.eq('buildHash', buildHash))
         .first()
 
-      let buildId: Id<'builds'>
-      let shouldDispatch = false
-
-      if (build) {
-        // Build already exists, use it
-        buildId = build._id
-        console.log(`Using existing build ${buildId} for hash ${buildHash}`)
-      } else {
-        // Check cache for existing build
-        const cached = await ctx.db
-          .query('buildCache')
-          .withIndex('by_hash_target', (q) =>
-            q.eq('buildHash', buildHash).eq('target', target)
-          )
-          .first()
-
-        if (cached) {
-          // Use cached artifact, create build with success status
-          const artifactUrl = getR2ArtifactUrl(buildHash)
-          buildId = await ctx.db.insert('builds', {
-            target: target,
-            githubRunId: 0,
-            status: 'success',
-            artifactUrl: artifactUrl,
-            startedAt: Date.now(),
-            completedAt: Date.now(),
-            buildHash: buildHash,
-          })
-          console.log(`Created cached build ${buildId} for hash ${buildHash}`)
-        } else {
-          // Not cached, create new build and dispatch workflow
-          buildId = await ctx.db.insert('builds', {
-            target: target,
-            githubRunId: 0,
-            status: 'queued',
-            startedAt: Date.now(),
-            buildHash: buildHash,
-          })
-          shouldDispatch = true
-          console.log(`Created new build ${buildId} for hash ${buildHash}`)
-        }
-
-        // Handle race condition: if another mutation created the build between our check and insert,
-        // query again to get the existing build (there might be duplicates, but we'll use the first one)
-        const existingBuild = await ctx.db
-          .query('builds')
-          .withIndex('by_hash', (q) => q.eq('buildHash', buildHash))
-          .first()
-
-        if (existingBuild && existingBuild._id !== buildId) {
-          // Another mutation created the build first, use that one instead
-          // Delete the duplicate we just created
-          await ctx.db.delete(buildId)
-          buildId = existingBuild._id
-          shouldDispatch = false
-          console.log(
-            `Race condition detected: using existing build ${existingBuild._id} instead of duplicate`
-          )
-        }
-      }
-
-      // Create or update profileBuild record
-      const existingProfileBuild = await ctx.db
-        .query('profileBuilds')
-        .withIndex('by_profile_target', (q) =>
-          q.eq('profileId', args.profileId).eq('target', target)
-        )
-        .first()
-
-      if (existingProfileBuild) {
-        // Update existing profileBuild to point to the (possibly new) build
-        await ctx.db.patch(existingProfileBuild._id, {
-          buildId: buildId,
-        })
-      } else {
-        // Create new profileBuild record
-        await ctx.db.insert('profileBuilds', {
-          profileId: args.profileId,
-          buildId: buildId,
-          target: target,
-          createdAt: Date.now(),
-        })
-      }
-
-      // Only dispatch GitHub workflow if build was newly created and not cached
-      if (shouldDispatch) {
-        await ctx.scheduler.runAfter(0, api.actions.dispatchGithubBuild, {
-          buildId: buildId,
-          target: target,
-          flags: flagsString,
-          version: profile.version,
-          buildHash: buildHash,
-        })
+      if (raceCheckBuild && raceCheckBuild._id !== buildId) {
+        await ctx.db.delete(buildId)
+        buildId = raceCheckBuild._id
+        shouldDispatch = false
       }
     }
+
+    // Create or get profileTarget
+    let profileTarget = await ctx.db
+      .query('profileTargets')
+      .withIndex('by_profile_target', (q) =>
+        q.eq('profileId', args.profileId).eq('target', args.target)
+      )
+      .first()
+
+    if (!profileTarget) {
+      const newProfileTargetId = await ctx.db.insert('profileTargets', {
+        profileId: args.profileId,
+        target: args.target,
+        createdAt: Date.now(),
+      })
+      const retrieved = await ctx.db.get(newProfileTargetId)
+      if (!retrieved) {
+        throw new Error('Failed to create profileTarget')
+      }
+      profileTarget = retrieved
+    }
+
+    // Create or update profileBuild record
+    const existingProfileBuild = await ctx.db
+      .query('profileBuilds')
+      .withIndex('by_profile_target', (q) =>
+        q.eq('profileId', args.profileId).eq('target', args.target)
+      )
+      .first()
+
+    if (existingProfileBuild) {
+      await ctx.db.patch(existingProfileBuild._id, {
+        buildId: buildId,
+      })
+    } else {
+      await ctx.db.insert('profileBuilds', {
+        profileId: args.profileId,
+        buildId: buildId,
+        target: args.target,
+        createdAt: Date.now(),
+      })
+    }
+
+    // Dispatch GitHub workflow if needed
+    if (shouldDispatch) {
+      await ctx.scheduler.runAfter(0, api.actions.dispatchGithubBuild, {
+        buildId: buildId,
+        target: args.target,
+        flags: flagsString,
+        version: profile.version,
+        buildHash: buildHash,
+      })
+    }
+
+    return profileTarget._id
   },
 })
 

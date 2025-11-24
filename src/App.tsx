@@ -23,7 +23,10 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/profiles/:id" element={<ProfileDetail />} />
-          <Route path="/profiles/:id/flash" element={<ProfileFlash />} />
+          <Route
+            path="/profiles/:id/flash/:profileTargetId"
+            element={<ProfileFlash />}
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Unauthenticated>
@@ -35,7 +38,10 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/builds/:buildId" element={<BuildDetail />} />
           <Route path="/profiles/:id" element={<ProfileDetail />} />
-          <Route path="/profiles/:id/flash" element={<ProfileFlash />} />
+          <Route
+            path="/profiles/:id/flash/:profileTargetId"
+            element={<ProfileFlash />}
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Authenticated>

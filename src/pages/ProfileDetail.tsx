@@ -1,7 +1,8 @@
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import * as React from 'react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
@@ -11,6 +12,7 @@ import { TARGETS } from '../constants/targets'
 export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const triggerFlash = useMutation(api.builds.triggerFlash)
   const profile = useQuery(
     api.profiles.get,
     id ? { id: id as Id<'profiles'> } : 'skip'
@@ -75,9 +77,19 @@ export default function ProfileDetail() {
     (module) => profile.config[module.id] === false
   )
 
-  const handleFlash = () => {
-    if (selectedTarget) {
-      navigate(`/profiles/${id}/flash`)
+  const handleFlash = async () => {
+    if (!selectedTarget || !id) return
+
+    try {
+      const profileTargetId = await triggerFlash({
+        profileId: id as Id<'profiles'>,
+        target: selectedTarget,
+      })
+      navigate(`/profiles/${id}/flash/${profileTargetId}`)
+    } catch (error) {
+      toast.error('Failed to start flash', {
+        description: String(error),
+      })
     }
   }
 

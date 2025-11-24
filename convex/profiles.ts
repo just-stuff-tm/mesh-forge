@@ -53,6 +53,31 @@ export const getTargets = query({
   },
 })
 
+export const getProfileTarget = query({
+  args: { profileTargetId: v.id('profileTargets') },
+  handler: async (ctx, args) => {
+    const profileTarget = await ctx.db.get(args.profileTargetId)
+    if (!profileTarget) return null
+
+    // Get the associated build via profileBuilds
+    const profileBuild = await ctx.db
+      .query('profileBuilds')
+      .withIndex('by_profile_target', (q) =>
+        q
+          .eq('profileId', profileTarget.profileId)
+          .eq('target', profileTarget.target)
+      )
+      .first()
+
+    const build = profileBuild ? await ctx.db.get(profileBuild.buildId) : null
+
+    return {
+      profileTarget,
+      build,
+    }
+  },
+})
+
 export const getFlashCount = query({
   args: { profileId: v.id('profiles') },
   handler: async (ctx, args) => {
