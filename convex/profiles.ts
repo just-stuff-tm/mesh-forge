@@ -1,6 +1,7 @@
 import { getAuthUserId } from '@convex-dev/auth/server'
 import { v } from 'convex/values'
 import { mutation, query } from './_generated/server'
+import { getR2ArtifactUrl } from './builds'
 
 export const list = query({
   args: {},
@@ -45,36 +46,50 @@ export const get = query({
 export const getTargets = query({
   args: { profileId: v.id('profiles') },
   handler: async (ctx, args) => {
-    const profileTargets = await ctx.db
-      .query('profileTargets')
+    const profileBuilds = await ctx.db
+      .query('profileBuilds')
       .withIndex('by_profile', (q) => q.eq('profileId', args.profileId))
       .collect()
-    return profileTargets.map((pt) => pt.target)
+    // Get unique targets from builds
+    const builds = await Promise.all(
+      profileBuilds.map((pb) => ctx.db.get(pb.buildId))
+    )
+    const targets = new Set(
+      builds
+        .filter((b): b is NonNullable<typeof b> => b !== null)
+        .map((b) => b.target)
+    )
+    return Array.from(targets)
   },
 })
 
 export const getProfileTarget = query({
-  args: { profileTargetId: v.id('profileTargets') },
+  args: {
+    profileId: v.id('profiles'),
+    target: v.string(),
+  },
   handler: async (ctx, args) => {
-    const profileTarget = await ctx.db.get(args.profileTargetId)
-    if (!profileTarget) return null
-
-    // Get the associated build via profileBuilds
-    const profileBuild = await ctx.db
+    // Get all profileBuilds for this profile
+    const profileBuilds = await ctx.db
       .query('profileBuilds')
-      .withIndex('by_profile_target', (q) =>
-        q
-          .eq('profileId', profileTarget.profileId)
-          .eq('target', profileTarget.target)
-      )
-      .first()
+      .withIndex('by_profile', (q) => q.eq('profileId', args.profileId))
+      .collect()
 
-    const build = profileBuild ? await ctx.db.get(profileBuild.buildId) : null
-
-    return {
-      profileTarget,
-      build,
+    // Find the profileBuild with matching target by checking the build
+    for (const profileBuild of profileBuilds) {
+      const build = await ctx.db.get(profileBuild.buildId)
+      if (build?.target === args.target) {
+        return {
+          profileBuild,
+          build: {
+            ...build,
+            artifactUrl: getR2ArtifactUrl(build),
+          },
+        }
+      }
     }
+
+    return null
   },
 })
 
@@ -118,16 +133,8 @@ export const create = mutation({
       isPublic: args.isPublic ?? true,
     })
 
-    // Create profileTargets entries
-    if (args.targets) {
-      for (const target of args.targets) {
-        await ctx.db.insert('profileTargets', {
-          profileId,
-          target,
-          createdAt: Date.now(),
-        })
-      }
-    }
+    // Note: targets are now tracked via profileBuilds when builds are triggered
+    // No need to create profileTargets entries
 
     return profileId
   },
@@ -160,37 +167,8 @@ export const update = mutation({
       updatedAt: Date.now(),
     })
 
-    // Sync profileTargets if targets are provided
-    if (args.targets !== undefined) {
-      const newTargets = new Set(args.targets)
-
-      const existingProfileTargets = await ctx.db
-        .query('profileTargets')
-        .withIndex('by_profile', (q) => q.eq('profileId', args.id))
-        .collect()
-
-      const existingTargets = new Set(
-        existingProfileTargets.map((pt) => pt.target)
-      )
-
-      // Delete targets that are no longer in the list
-      for (const profileTarget of existingProfileTargets) {
-        if (!newTargets.has(profileTarget.target)) {
-          await ctx.db.delete(profileTarget._id)
-        }
-      }
-
-      // Add new targets
-      for (const target of args.targets) {
-        if (!existingTargets.has(target)) {
-          await ctx.db.insert('profileTargets', {
-            profileId: args.id,
-            target,
-            createdAt: Date.now(),
-          })
-        }
-      }
-    }
+    // Note: targets are now tracked via profileBuilds when builds are triggered
+    // No need to sync profileTargets
   },
 })
 
@@ -205,14 +183,14 @@ export const remove = mutation({
       throw new Error('Unauthorized')
     }
 
-    // Delete associated profileTargets
-    const profileTargets = await ctx.db
-      .query('profileTargets')
+    // Delete associated profileBuilds
+    const profileBuilds = await ctx.db
+      .query('profileBuilds')
       .withIndex('by_profile', (q) => q.eq('profileId', args.id))
       .collect()
 
-    for (const profileTarget of profileTargets) {
-      await ctx.db.delete(profileTarget._id)
+    for (const profileBuild of profileBuilds) {
+      await ctx.db.delete(profileBuild._id)
     }
 
     await ctx.db.delete(args.id)

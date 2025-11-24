@@ -14,39 +14,21 @@ export default defineSchema({
   })
     .index('by_user', ['userId'])
     .index('by_public', ['isPublic']),
+
   builds: defineTable({
     target: v.string(),
     githubRunId: v.number(),
     status: v.string(), // Accepts arbitrary status strings (e.g., "queued", "checking_out", "building", "uploading", "success", "failure")
-    artifactUrl: v.optional(v.string()),
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
     buildHash: v.string(),
+    artifactPath: v.optional(v.string()), // Path to artifact in R2 (e.g., "/abc123.uf2" or "/abc123.bin")
   }).index('by_hash', ['buildHash']),
-
-  profileTargets: defineTable({
-    profileId: v.id('profiles'),
-    target: v.string(),
-    createdAt: v.number(),
-  })
-    .index('by_profile', ['profileId'])
-    .index('by_profile_target', ['profileId', 'target']),
 
   profileBuilds: defineTable({
     profileId: v.id('profiles'),
     buildId: v.id('builds'),
-    target: v.string(),
-    createdAt: v.number(),
   })
     .index('by_profile', ['profileId'])
-    .index('by_build', ['buildId'])
-    .index('by_profile_target', ['profileId', 'target']),
-
-  buildCache: defineTable({
-    buildHash: v.string(),
-    target: v.string(),
-    artifactUrl: v.string(),
-    version: v.string(),
-    createdAt: v.number(),
-  }).index('by_hash_target', ['buildHash', 'target']),
+    .index('by_build', ['buildId']),
 })

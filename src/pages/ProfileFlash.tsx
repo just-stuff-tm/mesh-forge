@@ -13,16 +13,14 @@ import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
 
 export default function ProfileFlash() {
-  const { id, profileTargetId } = useParams<{
+  const { id, target } = useParams<{
     id: string
-    profileTargetId: string
+    target: string
   }>()
 
   const data = useQuery(
     api.profiles.getProfileTarget,
-    profileTargetId
-      ? { profileTargetId: profileTargetId as Id<'profileTargets'> }
-      : 'skip'
+    id && target ? { profileId: id as Id<'profiles'>, target } : 'skip'
   )
 
   if (data === undefined) {
@@ -52,7 +50,6 @@ export default function ProfileFlash() {
   }
 
   const build = data.build
-  const profileTarget = data.profileTarget
 
   const getStatusColor = (status: string) => {
     if (status === 'success') return 'text-green-400'
@@ -90,7 +87,7 @@ export default function ProfileFlash() {
             <div className="flex items-center gap-4">
               {getStatusIcon(build.status)}
               <div>
-                <h1 className="text-3xl font-bold">{profileTarget.target}</h1>
+                <h1 className="text-3xl font-bold">{target}</h1>
                 <div className="flex items-center gap-2 text-slate-400 mt-1">
                   <span className={getStatusColor(build.status)}>
                     {humanizeStatus(build.status)}

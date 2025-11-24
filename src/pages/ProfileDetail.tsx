@@ -12,7 +12,7 @@ import { TARGETS } from '../constants/targets'
 export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const triggerFlash = useMutation(api.builds.triggerFlash)
+  const triggerBuildViaProfile = useMutation(api.builds.triggerBuildViaProfile)
   const profile = useQuery(
     api.profiles.get,
     id ? { id: id as Id<'profiles'> } : 'skip'
@@ -81,11 +81,11 @@ export default function ProfileDetail() {
     if (!selectedTarget || !id) return
 
     try {
-      const profileTargetId = await triggerFlash({
+      await triggerBuildViaProfile({
         profileId: id as Id<'profiles'>,
         target: selectedTarget,
       })
-      navigate(`/profiles/${id}/flash/${profileTargetId}`)
+      navigate(`/profiles/${id}/flash/${selectedTarget}`)
     } catch (error) {
       toast.error('Failed to start flash', {
         description: String(error),

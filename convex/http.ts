@@ -34,6 +34,7 @@ http.route({
       await ctx.runMutation(internal.builds.updateBuildStatus, {
         buildId: payload.build_id,
         status: payload.status,
+        artifactPath: payload.artifactPath,
       })
 
       return new Response(null, { status: 200 })

@@ -13,9 +13,9 @@ export default function Dashboard() {
   const profiles = useQuery(api.profiles.list)
   const removeProfile = useMutation(api.profiles.remove)
   const [isEditing, setIsEditing] = useState(false)
-  const [editingProfile, setEditingProfile] = useState<Doc<'profiles'> | null>(
-    null
-  )
+  const [editingProfile, setEditingProfile] = useState<
+    Doc<'profiles'> | undefined
+  >(undefined)
 
   const handleEdit = (profile: Doc<'profiles'>) => {
     setEditingProfile(profile)
@@ -23,7 +23,7 @@ export default function Dashboard() {
   }
 
   const handleCreate = () => {
-    setEditingProfile(null)
+    setEditingProfile(undefined)
     setIsEditing(true)
   }
 

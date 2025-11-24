@@ -23,4 +23,3 @@ export default function ProfileTargets({ profileId }: ProfileTargetsProps) {
     </span>
   )
 }
-
