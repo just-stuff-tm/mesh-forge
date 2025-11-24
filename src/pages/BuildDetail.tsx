@@ -1,29 +1,29 @@
-import { useQuery } from "convex/react";
+import { useQuery } from 'convex/react'
 import {
   ArrowLeft,
   CheckCircle,
   Download,
   Loader2,
   XCircle,
-} from "lucide-react";
-import { Link, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { humanizeStatus } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+} from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { humanizeStatus } from '@/lib/utils'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 
 export default function BuildDetail() {
-  const { buildId } = useParams<{ buildId: string }>();
+  const { buildId } = useParams<{ buildId: string }>()
   const build = useQuery(api.builds.get, {
-    buildId: buildId as Id<"builds">,
-  });
+    buildId: buildId as Id<'builds'>,
+  })
 
   if (build === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-950 text-white">
         <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
       </div>
-    );
+    )
   }
 
   if (build === null) {
@@ -34,30 +34,30 @@ export default function BuildDetail() {
           <Button variant="outline">Return to Dashboard</Button>
         </Link>
       </div>
-    );
+    )
   }
 
   const getStatusColor = (status: string) => {
-    if (status === "success") {
-      return "text-green-400";
+    if (status === 'success') {
+      return 'text-green-400'
     }
-    if (status === "failure") {
-      return "text-red-400";
+    if (status === 'failure') {
+      return 'text-red-400'
     }
     // All other statuses show as in progress
-    return "text-blue-400";
-  };
+    return 'text-blue-400'
+  }
 
   const getStatusIcon = (status: string) => {
-    if (status === "success") {
-      return <CheckCircle className="w-6 h-6 text-green-500" />;
+    if (status === 'success') {
+      return <CheckCircle className="w-6 h-6 text-green-500" />
     }
-    if (status === "failure") {
-      return <XCircle className="w-6 h-6 text-red-500" />;
+    if (status === 'failure') {
+      return <XCircle className="w-6 h-6 text-red-500" />
     }
     // All other statuses show as in progress
-    return <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />;
-  };
+    return <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
@@ -87,7 +87,7 @@ export default function BuildDetail() {
               </div>
             </div>
 
-            {build.status === "success" && build.artifactUrl && (
+            {build.status === 'success' && build.artifactUrl && (
               <a
                 href={build.artifactUrl}
                 target="_blank"
@@ -102,5 +102,5 @@ export default function BuildDetail() {
         </header>
       </div>
     </div>
-  );
+  )
 }

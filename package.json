@@ -8,7 +8,7 @@
 		"dev": "bun run generate:versions && vite",
 		"build": "bun run generate:versions && tsc && vite build",
 		"lint": "biome lint",
-		"lint:fix": "biome lint --fix",
+		"lint:fix": "biome lint --fix && biome format --write",
 		"preview": "vite preview",
 		"deploy": "npx convex deploy --cmd 'bun run build' && wrangler deploy"
 	},

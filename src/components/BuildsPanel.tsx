@@ -1,82 +1,75 @@
-import { useMutation, useQuery } from "convex/react";
-import {
-  CheckCircle,
-  Clock,
-  Loader2,
-  RotateCw,
-  Trash2,
-  XCircle,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { humanizeStatus, timeAgo } from "@/lib/utils";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import { useMutation, useQuery } from 'convex/react'
+import { CheckCircle, Loader2, RotateCw, Trash2, XCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { humanizeStatus, timeAgo } from '@/lib/utils'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 
 interface BuildsPanelProps {
-  profileId: Id<"profiles">;
+  profileId: Id<'profiles'>
 }
 
 export default function BuildsPanel({ profileId }: BuildsPanelProps) {
-  const builds = useQuery(api.builds.listByProfile, { profileId });
-  const deleteBuild = useMutation(api.builds.deleteBuild);
-  const retryBuild = useMutation(api.builds.retryBuild);
+  const builds = useQuery(api.builds.listByProfile, { profileId })
+  const deleteBuild = useMutation(api.builds.deleteBuild)
+  const retryBuild = useMutation(api.builds.retryBuild)
 
   const getStatusIcon = (status: string) => {
-    if (status === "success") {
-      return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (status === 'success') {
+      return <CheckCircle className="w-4 h-4 text-green-500" />
     }
-    if (status === "failure") {
-      return <XCircle className="w-4 h-4 text-red-500" />;
+    if (status === 'failure') {
+      return <XCircle className="w-4 h-4 text-red-500" />
     }
     // All other statuses show as in progress
-    return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-  };
+    return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+  }
 
   const getStatusColor = (status: string) => {
-    if (status === "success") {
-      return "text-green-400";
+    if (status === 'success') {
+      return 'text-green-400'
     }
-    if (status === "failure") {
-      return "text-red-400";
+    if (status === 'failure') {
+      return 'text-red-400'
     }
     // All other statuses show as in progress
-    return "text-blue-400";
-  };
+    return 'text-blue-400'
+  }
 
-  const handleDelete = async (buildId: Id<"builds">) => {
+  const handleDelete = async (buildId: Id<'builds'>) => {
     try {
-      await deleteBuild({ buildId });
-      toast.success("Build deleted", {
-        description: "Build record has been removed.",
-      });
+      await deleteBuild({ buildId })
+      toast.success('Build deleted', {
+        description: 'Build record has been removed.',
+      })
     } catch (error) {
-      toast.error("Delete failed", {
+      toast.error('Delete failed', {
         description: String(error),
-      });
+      })
     }
-  };
+  }
 
-  const handleRetry = async (buildId: Id<"builds">) => {
+  const handleRetry = async (buildId: Id<'builds'>) => {
     try {
-      await retryBuild({ buildId });
-      toast.success("Build retrying", {
-        description: "Build has been queued again.",
-      });
+      await retryBuild({ buildId })
+      toast.success('Build retrying', {
+        description: 'Build has been queued again.',
+      })
     } catch (error) {
-      toast.error("Retry failed", {
+      toast.error('Retry failed', {
         description: String(error),
-      });
+      })
     }
-  };
+  }
 
   if (!builds || builds.length === 0) {
     return (
       <div className="text-slate-500 text-sm py-4">
         No builds yet. Click "Build" to start.
       </div>
-    );
+    )
   }
 
   return (
@@ -108,14 +101,14 @@ export default function BuildsPanel({ profileId }: BuildsPanelProps) {
             </Link>
 
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {build.status === "failure" && (
+              {build.status === 'failure' && (
                 <Button
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 text-slate-400 hover:text-white"
                   onClick={(e) => {
-                    e.preventDefault();
-                    handleRetry(build._id);
+                    e.preventDefault()
+                    handleRetry(build._id)
                   }}
                   title="Retry Build"
                 >
@@ -127,8 +120,8 @@ export default function BuildsPanel({ profileId }: BuildsPanelProps) {
                 variant="ghost"
                 className="h-8 w-8 text-slate-400 hover:text-red-400"
                 onClick={(e) => {
-                  e.preventDefault();
-                  handleDelete(build._id);
+                  e.preventDefault()
+                  handleDelete(build._id)
                 }}
                 title="Delete Build"
               >
@@ -139,5 +132,5 @@ export default function BuildsPanel({ profileId }: BuildsPanelProps) {
         ))}
       </div>
     </div>
-  );
+  )
 }

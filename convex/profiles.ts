@@ -1,80 +1,80 @@
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from '@convex-dev/auth/server'
+import { v } from 'convex/values'
+import { mutation, query } from './_generated/server'
 
 export const list = query({
-	args: {},
-	handler: async (ctx) => {
-		const userId = await getAuthUserId(ctx);
-		if (!userId) return [];
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) return []
 
-		return await ctx.db
-			.query("profiles")
-			.withIndex("by_user", (q) => q.eq("userId", userId))
-			.collect();
-	},
-});
+    return await ctx.db
+      .query('profiles')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
+  },
+})
 
 export const create = mutation({
-	args: {
-		name: v.string(),
-		targets: v.array(v.string()),
-		config: v.any(),
-		version: v.string(),
-	},
-	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx);
-		if (!userId) throw new Error("Unauthorized");
+  args: {
+    name: v.string(),
+    targets: v.array(v.string()),
+    config: v.any(),
+    version: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Unauthorized')
 
-		return await ctx.db.insert("profiles", {
-			userId,
-			name: args.name,
-			targets: args.targets,
-			config: args.config,
-			version: args.version,
-			updatedAt: Date.now(),
-		});
-	},
-});
+    return await ctx.db.insert('profiles', {
+      userId,
+      name: args.name,
+      targets: args.targets,
+      config: args.config,
+      version: args.version,
+      updatedAt: Date.now(),
+    })
+  },
+})
 
 export const update = mutation({
-	args: {
-		id: v.id("profiles"),
-		name: v.string(),
-		targets: v.array(v.string()),
-		config: v.any(),
-		version: v.optional(v.string()),
-	},
-	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx);
-		if (!userId) throw new Error("Unauthorized");
+  args: {
+    id: v.id('profiles'),
+    name: v.string(),
+    targets: v.array(v.string()),
+    config: v.any(),
+    version: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Unauthorized')
 
-		const profile = await ctx.db.get(args.id);
-		if (!profile || profile.userId !== userId) {
-			throw new Error("Unauthorized");
-		}
+    const profile = await ctx.db.get(args.id)
+    if (!profile || profile.userId !== userId) {
+      throw new Error('Unauthorized')
+    }
 
-		await ctx.db.patch(args.id, {
-			name: args.name,
-			targets: args.targets,
-			config: args.config,
-			version: args.version,
-			updatedAt: Date.now(),
-		});
-	},
-});
+    await ctx.db.patch(args.id, {
+      name: args.name,
+      targets: args.targets,
+      config: args.config,
+      version: args.version,
+      updatedAt: Date.now(),
+    })
+  },
+})
 
 export const remove = mutation({
-	args: { id: v.id("profiles") },
-	handler: async (ctx, args) => {
-		const userId = await getAuthUserId(ctx);
-		if (!userId) throw new Error("Unauthorized");
+  args: { id: v.id('profiles') },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Unauthorized')
 
-		const profile = await ctx.db.get(args.id);
-		if (!profile || profile.userId !== userId) {
-			throw new Error("Unauthorized");
-		}
+    const profile = await ctx.db.get(args.id)
+    if (!profile || profile.userId !== userId) {
+      throw new Error('Unauthorized')
+    }
 
-		await ctx.db.delete(args.id);
-	},
-});
+    await ctx.db.delete(args.id)
+  },
+})
