@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["src/**", "!vendor"]
+		"includes": ["./**", "convex/**", "src/**", "!vendor", "!convex/_generated"]
 	},
 	"css": {
 		"parser": {
@@ -28,7 +28,12 @@
 	},
 	"javascript": {
 		"formatter": {
-			"quoteStyle": "double"
+			"quoteStyle": "double",
+			"indentStyle": "space",
+			"indentWidth": 2,
+			"quoteProperties": "asNeeded",
+			"semicolons": "always",
+			"trailingCommas": "all"
 		}
 	},
 	"assist": {
@@ -37,6 +42,11 @@
 			"source": {
 				"organizeImports": "on"
 			}
+		}
+	},
+	"json": {
+		"formatter": {
+			"trailingCommas": "none"
 		}
 	}
 }
