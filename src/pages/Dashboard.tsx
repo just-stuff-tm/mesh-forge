@@ -18,7 +18,7 @@ export default function Dashboard() {
   const removeProfile = useMutation(api.profiles.remove)
   const [isCreating, setIsCreating] = useState(false)
 
-  const handleEdit = (profile: Doc<'profiles'>) => {
+  const handleEdit = (profile: Doc) => {
     navigate(`/dashboard/profiles/${profile._id}`)
   }
 

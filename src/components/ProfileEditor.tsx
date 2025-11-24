@@ -18,7 +18,7 @@ interface ProfileFormValues {
 }
 
 interface ProfileEditorProps {
-  initialData?: Doc<'profiles'>
+  initialData?: Doc
   onSave: () => void
   onCancel: () => void
 }
