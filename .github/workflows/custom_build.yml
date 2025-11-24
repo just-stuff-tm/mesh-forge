@@ -139,18 +139,18 @@ jobs:
           source /tmp/update_status.sh
           update_status preparing_upload
 
-      - name: Update Status - Installing AWS CLI
+      - name: Update Status - Installing Wrangler
         if: success()
         shell: bash
         run: |
           source /tmp/update_status.sh
-          update_status installing_aws_cli
+          update_status installing_wrangler
 
-      - name: Install AWS CLI (for R2)
+      - name: Install Wrangler (for R2)
         if: success()
         shell: bash
         run: |
-          pip install awscli
+          npm install -g wrangler
 
       - name: Update Status - Uploading uf2 to R2
         if: success()
@@ -162,25 +162,38 @@ jobs:
       - name: Upload to R2
         if: success()
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         shell: bash
         run: |
           source /tmp/update_status.sh
           update_status locating_build_file
           # Determine file extension based on target (most are .bin, some might be .uf2)
           BUILD_FILE="firmware/.pio/build/${{ inputs.target }}/firmware.bin"
+          FILE_EXT=".bin"
           if [ ! -f "$BUILD_FILE" ]; then
             BUILD_FILE="firmware/.pio/build/${{ inputs.target }}/firmware.uf2"
+            FILE_EXT=".uf2"
           fi
           
-          update_status uploading
-          # Upload to R2 with hash as filename
-          aws s3 cp "$BUILD_FILE" "s3://${{ inputs.build_hash }}.uf2" \
-            --endpoint-url "$AWS_ENDPOINT_URL"
+          # Determine artifact path with correct extension (with leading slash for storage)
+          ARTIFACT_PATH="/${{ inputs.build_hash }}${FILE_EXT}"
+          # Object key for wrangler (without leading slash)
+          OBJECT_KEY="${{ inputs.build_hash }}${FILE_EXT}"
           
-          echo "✅ Uploaded to R2: ${{ inputs.build_hash }}.uf2"
+          update_status uploading
+          # Upload to R2 with hash and correct extension
+          wrangler r2 object put "$OBJECT_KEY" \
+            --file "$BUILD_FILE" \
+            --bucket "$R2_BUCKET_NAME"
+          
+          # Update build with artifact path (with leading slash)
+          curl -sSf -X POST "$CONVEX_URL/github-webhook" \
+            -H "Content-Type: application/json" \
+            -d "{\"action\": \"status_update\", \"build_id\": \"$BUILD_ID\", \"status\": \"uploaded\", \"artifactPath\": \"$ARTIFACT_PATH\"}" || true
+          
+          echo "✅ Uploaded to R2: $ARTIFACT_PATH"
 
       - name: Update Build Status - Final
         if: always()
