@@ -5,13 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { api } from "../../convex/_generated/api";
+import type { Doc } from "../../convex/_generated/dataModel";
 import modulesData from "../../convex/modules.json";
 import { TARGETS } from "../constants/targets";
 import { VERSIONS } from "../constants/versions";
 import { ModuleCard } from "./ModuleCard";
 
+interface ProfileFormValues {
+	name: string;
+	targets: string[];
+	config: Record<string, boolean>;
+	version: string;
+}
+
 interface ProfileEditorProps {
-	initialData?: any;
+	initialData?: Doc<"profiles">;
 	onSave: () => void;
 	onCancel: () => void;
 }
@@ -76,7 +84,7 @@ export default function ProfileEditor({
 		}
 	};
 
-	const onSubmit = async (data: any) => {
+	const onSubmit = async (data: ProfileFormValues) => {
 		if (initialData?._id) {
 			await updateProfile({
 				id: initialData._id,
@@ -127,7 +135,7 @@ export default function ProfileEditor({
 			</div>
 
 			<div>
-				<label className="block text-sm font-medium mb-2">Targets</label>
+				<div className="block text-sm font-medium mb-2">Targets</div>
 				<div className="space-y-4">
 					{/* Category Pills */}
 					<div className="flex flex-wrap gap-2">
