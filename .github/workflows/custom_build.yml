@@ -179,14 +179,13 @@ jobs:
           
           # Determine artifact path with correct extension (with leading slash for storage)
           ARTIFACT_PATH="/${{ inputs.build_hash }}${FILE_EXT}"
-          # Object key for wrangler (without leading slash)
-          OBJECT_KEY="${{ inputs.build_hash }}${FILE_EXT}"
+          # Object path for wrangler is bucket/key without leading slash
+          OBJECT_PATH="${R2_BUCKET_NAME}/${{ inputs.build_hash }}${FILE_EXT}"
           
           update_status uploading
           # Upload to R2 with hash and correct extension
-          wrangler r2 object put "$OBJECT_KEY" \
-            --file "$BUILD_FILE" \
-            --bucket "$R2_BUCKET_NAME"
+          wrangler r2 object put "$OBJECT_PATH" \
+            --file "$BUILD_FILE"
           
           # Update build with artifact path (with leading slash)
           curl -sSf -X POST "$CONVEX_URL/github-webhook" \
