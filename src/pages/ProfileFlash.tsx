@@ -1,11 +1,5 @@
 import { useMutation, useQuery } from 'convex/react'
-import {
-  ArrowLeft,
-  CheckCircle,
-  ExternalLink,
-  Loader2,
-  XCircle,
-} from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2, XCircle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ProfileStatisticPills } from '@/components/ProfileCard'
 import { Button } from '@/components/ui/button'
@@ -175,25 +169,34 @@ export default function ProfileFlash() {
                 <span className={getStatusColor(build.status)}>
                   {humanizeStatus(build.status)}
                 </span>
+                {githubActionUrl && (
+                  <a
+                    href={githubActionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                    title="View on GitHub Actions"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 32 32"
+                      className="w-4 h-4"
+                    >
+                      <title>View on GitHub Actions</title>
+                      <path
+                        fill="currentColor"
+                        d="M26 18h-6a2 2 0 0 0-2 2v2h-6a2 2 0 0 1-2-2v-6h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2v6a4 4 0 0 0 4 4h6v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2M6.5 12a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5ZM26 25.5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5Z"
+                      />
+                    </svg>
+                  </a>
+                )}
                 <span>•</span>
                 <span>{new Date(build.startedAt).toLocaleString()}</span>
               </div>
             </div>
           </div>
-
-          {githubActionUrl && (
-            <div>
-              <a
-                href={githubActionUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-cyan-400 hover:text-cyan-300 text-sm"
-              >
-                View on GitHub Actions
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </a>
-            </div>
-          )}
 
           {build.status === 'success' && build.artifactUrl && (
             <div>
