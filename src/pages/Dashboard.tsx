@@ -75,7 +75,7 @@ export default function Dashboard() {
                 <ProfileCardContent profile={profile} />
                 <div className="flex gap-2 pt-2">
                   <Button size="sm" asChild>
-                    <Link to={`/profiles/${profile._id}`}>Use</Link>
+                    <Link to={`/profiles/${profile._id}`}>Flash</Link>
                   </Button>
                   <Button
                     size="sm"
