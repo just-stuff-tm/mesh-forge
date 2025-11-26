@@ -33,6 +33,7 @@ jobs:
     env:
       CONVEX_URL: ${{ inputs.convex_url }}
       BUILD_ID: ${{ inputs.build_id }}
+      CONVEX_BUILD_TOKEN: ${{ secrets.CONVEX_BUILD_TOKEN }}
     steps:
       - name: Setup status update helper
         shell: bash
@@ -47,6 +48,7 @@ jobs:
             fi
             curl -sSf -X POST "$CONVEX_URL/github-webhook" \
               -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $CONVEX_BUILD_TOKEN" \
               -d "$payload" || true
           }
           EOF
