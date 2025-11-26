@@ -122,10 +122,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install platformio
 
-      - name: Install Brotli
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y brotli
 
       - name: Update Status - Building Firmware
         shell: bash
@@ -241,7 +237,7 @@ jobs:
 
           1. Extract this archive:
              \`\`\`bash
-             tar --use-compress-program='brotli -d' -xf source.tar.br
+             tar -xzf source.tar.gz
              \`\`\`
 
           2. Navigate to the firmware directory:
@@ -262,28 +258,21 @@ jobs:
 
           ## Notes
 
-          - Library dependencies (`.pio/libdeps/`) are included for offline builds
-          - Toolchains/compilers are not included - PlatformIO will download these as needed
+          - PlatformIO dependencies (`.pio/`) are not included - PlatformIO will download these as needed
           - The build flags above must be set exactly as shown to reproduce the build
           EOF
           
-          # Create tar archive and compress with Brotli
-          # Include MESHFORGE.md, source code, submodules, and .pio/libdeps if it exists
-          cd ..
-          tar --use-compress-program='brotli -q 11' -cf "${{ inputs.build_hash }}.tar.br" \
-            --exclude='.pio/build' \
-            --exclude='.pio/packages' \
-            --exclude='.git' \
-            -C firmware . \
-            || (echo "Note: tar --use-compress-program failed, using separate compression" && \
-                tar --exclude='.pio/build' \
-                    --exclude='.pio/packages' \
-                    --exclude='.git' \
-                    -cf - -C firmware . | \
-                brotli -q 11 -o "${{ inputs.build_hash }}.tar.br")
+          # Stage MESHFORGE.md so it gets included in the archive
+          git add -f MESHFORGE.md
           
-          echo "✅ Created source archive: ${{ inputs.build_hash }}.tar.br"
-          ls -lh "${{ inputs.build_hash }}.tar.br"
+          # Use git archive to create tar.gz, which automatically:
+          # - Respects .gitignore (excludes .pio/, build artifacts, etc.)
+          # - Excludes .git directory
+          cd ..
+          git -C firmware archive --format=tar.gz --output="${{ inputs.build_hash }}.tar.gz" HEAD
+          
+          echo "✅ Created source archive: ${{ inputs.build_hash }}.tar.gz"
+          ls -lh "${{ inputs.build_hash }}.tar.gz"
 
       - name: Update Status - Uploading Source Archive
         if: success()
@@ -300,12 +289,12 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
         shell: bash
         run: |
-          SOURCE_ARCHIVE_PATH="/${{ inputs.build_hash }}.tar.br"
-          SOURCE_OBJECT_PATH="${R2_BUCKET_NAME}/${{ inputs.build_hash }}.tar.br"
+          SOURCE_ARCHIVE_PATH="/${{ inputs.build_hash }}.tar.gz"
+          SOURCE_OBJECT_PATH="${R2_BUCKET_NAME}/${{ inputs.build_hash }}.tar.gz"
           
           # Upload source archive to R2
           wrangler r2 object put "$SOURCE_OBJECT_PATH" \
-            --file "${{ inputs.build_hash }}.tar.br" --remote
+            --file "${{ inputs.build_hash }}.tar.gz" --remote
           
           echo "✅ Uploaded source archive to R2: $SOURCE_ARCHIVE_PATH"
 
