@@ -265,11 +265,11 @@ jobs:
           # Stage MESHFORGE.md so it gets included in the archive
           git add -f MESHFORGE.md
           
-          # Use git archive to create tar.gz, which automatically:
+          # Use git archive to create tar, which automatically:
           # - Respects .gitignore (excludes .pio/, build artifacts, etc.)
           # - Excludes .git directory
           cd ..
-          git -C firmware archive --format=tar.gz --output="${{ inputs.build_hash }}.tar.gz" HEAD
+          git -C firmware archive --format=tar HEAD | gzip -9 > "${{ inputs.build_hash }}.tar.gz"
           
           echo "✅ Created source archive: ${{ inputs.build_hash }}.tar.gz"
           ls -lh "${{ inputs.build_hash }}.tar.gz"
