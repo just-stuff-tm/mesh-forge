@@ -1,7 +1,7 @@
 import { useMutation } from 'convex/react'
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ModuleToggle } from '@/components/ModuleToggle'
 import { Button } from '@/components/ui/button'
@@ -163,12 +163,6 @@ export default function BuildNew() {
               soon as it starts.
             </p>
           </div>
-          <Link
-            to="/"
-            className="text-slate-400 hover:text-white transition-colors text-sm"
-          >
-            ← Back to landing page
-          </Link>
         </div>
 
         <div className="space-y-6 bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
