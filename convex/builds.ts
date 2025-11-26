@@ -332,7 +332,7 @@ export const generateAnonymousDownloadUrl = mutation({
     build: v.object(buildFields),
     slug: v.string(),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     let objectKey = args.build.artifactPath || ''
     if (objectKey.startsWith('/')) {
       objectKey = objectKey.substring(1)
