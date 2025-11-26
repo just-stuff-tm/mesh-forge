@@ -1,6 +1,12 @@
 import { Authenticated, AuthLoading, Unauthenticated } from 'convex/react'
 import { Loader2 } from 'lucide-react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
@@ -8,6 +14,14 @@ import LandingPage from './pages/LandingPage'
 import ProfileDetail from './pages/ProfileDetail'
 import ProfileEditorPage from './pages/ProfileEditorPage'
 import ProfileFlash from './pages/ProfileFlash'
+
+function ConditionalNavbar() {
+  const location = useLocation()
+  if (location.pathname === '/') {
+    return null
+  }
+  return <Navbar />
+}
 
 function App() {
   return (
@@ -19,7 +33,7 @@ function App() {
       </AuthLoading>
 
       <Unauthenticated>
-        <Navbar />
+        <ConditionalNavbar />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/profiles/:id" element={<ProfileDetail />} />
@@ -28,7 +42,7 @@ function App() {
       </Unauthenticated>
 
       <Authenticated>
-        <Navbar />
+        <ConditionalNavbar />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
