@@ -1,12 +1,7 @@
 import { useAuthActions } from '@convex-dev/auth/react'
-import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
+import { Authenticated, Unauthenticated } from 'convex/react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ProfileCardContent,
-  profileCardClasses,
-} from '@/components/ProfileCard'
 import { Button } from '@/components/ui/button'
-import { api } from '../../convex/_generated/api'
 
 function QuickBuildIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -25,10 +20,45 @@ function QuickBuildIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
+function BrowseIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      role="img"
+      aria-label="Browse"
+      {...props}
+    >
+      <title>Browse</title>
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M16.33 3.75H6.67c-.535 0-.98 0-1.345.03c-1.411.115-2.432 1.164-2.545 2.545c-.03.365-.03.812-.03 1.345v8.66c0 .535 0 .98.03 1.345c.03.38.098.736.27 1.073a2.75 2.75 0 0 0 1.202 1.202c.337.172.693.24 1.073.27c.365.03.81.03 1.344.03h9.662c.534 0 .98 0 1.344-.03c.38-.03.736-.098 1.073-.27a.75.75 0 0 0-.68-1.336c-.091.046-.228.088-.516.111c-.295.024-.68.025-1.252.025H6.7c-.572 0-.957 0-1.253-.025c-.287-.023-.424-.065-.514-.111a1.25 1.25 0 0 1-.547-.547c-.046-.09-.088-.227-.111-.515c-.024-.295-.025-.68-.025-1.252V8.25h14.486q.012.625.014 1.25a.75.75 0 1 0 1.5 0q0-.28-.003-.558c-.007-.67-.027-1.807-.091-2.618c-.113-1.424-1.072-2.43-2.481-2.544c-.365-.03-.81-.03-1.345-.03m2.352 3c-.048-.797-.278-1.406-1.13-1.475c-.295-.024-.68-.025-1.252-.025H6.7c-.572 0-.957 0-1.253.025c-.818.067-1.163.68-1.189 1.475z"
+        clipRule="evenodd"
+      />
+      <path
+        fill="currentColor"
+        d="M6.5 9.25a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5z"
+      />
+      <path
+        fill="currentColor"
+        fillRule="evenodd"
+        d="M17 10.25a3.25 3.25 0 1 0 1.706 6.017l1.264 1.263a.75.75 0 1 0 1.06-1.06l-1.263-1.264A3.25 3.25 0 0 0 17 10.25m-1.75 3.25a1.75 1.75 0 1 1 3.5 0a1.75 1.75 0 0 1-3.5 0"
+        clipRule="evenodd"
+      />
+      <path
+        fill="currentColor"
+        d="M6.5 11.25a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5zm0 3a.75.75 0 0 0 0 1.5h5a.75.75 0 0 0 0-1.5zm0 2a.75.75 0 0 0 0 1.5h3a.75.75 0 0 0 0-1.5z"
+      />
+    </svg>
+  )
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { signIn } = useAuthActions()
-  const profiles = useQuery(api.profiles.listPublic)
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -53,6 +83,15 @@ export default function LandingPage() {
             >
               <QuickBuildIcon className="mr-2 h-5 w-5" />
               Quick Build
+            </Button>
+            <Button
+              onClick={() => navigate('/browse')}
+              size="lg"
+              variant="outline"
+              className="border-cyan-500/50 text-white hover:bg-slate-900/60"
+            >
+              <BrowseIcon className="mr-2 h-5 w-5" />
+              Browse
             </Button>
             <Authenticated>
               <Button
@@ -135,37 +174,6 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-
-        <main className="px-8 pb-8">
-          {profiles === undefined ? (
-            <div className="text-center text-slate-400 py-12">
-              Loading profiles...
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="text-center text-slate-400 py-12">
-              No public profiles available yet.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {profiles.map((profile) => (
-                <button
-                  key={profile._id}
-                  type="button"
-                  onClick={() => navigate(`/profiles/${profile._id}`)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      navigate(`/profiles/${profile._id}`)
-                    }
-                  }}
-                  className={`${profileCardClasses} hover:bg-slate-900 cursor-pointer transition-colors text-left`}
-                >
-                  <ProfileCardContent profile={profile} />
-                </button>
-              ))}
-            </div>
-          )}
-        </main>
       </div>
     </div>
   )
