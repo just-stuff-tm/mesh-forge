@@ -53,6 +53,17 @@ jobs:
           }
           EOF
           chmod +x /tmp/update_status.sh
+
+      - name: Update Status - Fetching Mesh Forge
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          update_status checking_out_meshforge
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: meshforge
       
       - name: Update Status - Fetching Web Flasher
         shell: bash
@@ -83,6 +94,32 @@ jobs:
           path: firmware
           submodules: recursive
           fetch-depth: 1
+
+      - name: Apply Firmware Patch
+        shell: bash
+        run: |
+          cd firmware
+          git apply ../meshforge/firmware-patch.diff
+
+      - name: Update Status - Fetching Mesh Package Manager
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          update_status checking_out_mpm
+
+      - name: Checkout Mesh Package Manager
+        uses: actions/checkout@v4
+        with:
+          repository: MeshEnvy/mpm
+          ref: ${{ inputs.version }}
+          path: mpm
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install Python Requirements
+        working-directory: firmware
+        run: |
+          python -m pip install -r requirements.txt -t pyvendor
 
       - name: Update Status - Downloading PlatformIO Cache
         shell: bash
