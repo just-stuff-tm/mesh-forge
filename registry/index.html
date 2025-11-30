@@ -4,10 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mesh Plugin Registry</title>
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css"
-      rel="stylesheet"
-    />
     <style>
       * {
         margin: 0;
@@ -27,137 +23,176 @@
       }
 
       .container {
-        max-width: 900px;
+        max-width: 1000px;
         margin: 0 auto;
         background: white;
-        border-radius: 16px;
+        border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         overflow: hidden;
       }
 
-      .header {
+      .hero {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 3rem 2rem;
+        padding: 4rem 2rem;
         text-align: center;
       }
 
-      .header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
+      .hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
         font-weight: 700;
       }
 
-      .header p {
-        font-size: 1.2rem;
+      .hero p {
+        font-size: 1.3rem;
         opacity: 0.95;
+        margin-bottom: 2rem;
+      }
+
+      .hero-meta {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        margin-top: 1rem;
+      }
+
+      .hero-meta a {
+        color: white;
+        text-decoration: underline;
+      }
+
+      .main-cta {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: #f8f9ff;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem 3rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1.4rem;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .cta-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
       }
 
       .content {
-        padding: 3rem 2rem;
+        padding: 4rem 2rem;
       }
 
-      .section {
+      .methods {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
         margin-bottom: 3rem;
       }
 
-      .section:last-child {
-        margin-bottom: 0;
+      .method-card {
+        background: #f8f9ff;
+        border-radius: 12px;
+        padding: 2rem;
+        border: 2px solid #e8eaff;
       }
 
-      .section h2 {
-        font-size: 1.8rem;
+      .method-card.easy {
+        border-color: #667eea;
+      }
+
+      .method-card h3 {
+        font-size: 1.5rem;
         color: #667eea;
+        margin-bottom: 0.5rem;
+      }
+
+      .method-card .badge {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
         margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
       }
 
-      .section h2::before {
-        content: "";
-        width: 4px;
-        height: 1.8rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 2px;
+      .method-card .badge.hard {
+        background: #6c757d;
       }
 
-      .section p {
-        font-size: 1.1rem;
+      .method-card p {
         color: #4a4a4a;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
       }
 
-      .section ul {
+      .method-card ul {
         list-style: none;
-        padding-left: 0;
+        padding: 0;
+        margin-bottom: 1.5rem;
       }
 
-      .section ul li {
-        padding: 0.75rem 0;
+      .method-card ul li {
+        padding: 0.5rem 0;
         padding-left: 1.5rem;
         position: relative;
-        font-size: 1.05rem;
         color: #4a4a4a;
       }
 
-      .section ul li::before {
+      .method-card ul li::before {
         content: "✓";
         position: absolute;
         left: 0;
         color: #667eea;
         font-weight: bold;
-        font-size: 1.2rem;
       }
 
-      .section ol li {
-        padding: 0.75rem 0;
-        padding-left: 1.5rem;
-        font-size: 1.05rem;
-        color: #4a4a4a;
-      }
-
-      .code-block {
-        background: #272822;
-        border: 1px solid #3e3d32;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-        overflow-x: auto;
-        font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
-        font-size: 0.95rem;
-        line-height: 1.8;
-      }
-
-      .code-block pre {
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        border: none;
-        font-family: inherit;
-        font-size: inherit;
-        line-height: inherit;
-        white-space: pre;
-        overflow-x: auto;
-      }
-
-      .code-block code {
-        font-family: inherit;
-      }
-
-      .highlight-box {
-        background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-        border-left: 4px solid #667eea;
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin: 1.5rem 0;
-      }
-
-      .highlight-box strong {
+      .link-button {
+        display: inline-block;
         color: #667eea;
-        display: block;
-        margin-bottom: 0.5rem;
-        font-size: 1.1rem;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+
+      .link-button:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      .authors {
+        background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        border: 2px solid #e8eaff;
+      }
+
+      .authors h3 {
+        font-size: 1.5rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+      }
+
+      .authors p {
+        color: #4a4a4a;
+        margin-bottom: 1.5rem;
+        font-size: 1.05rem;
       }
 
       .footer {
@@ -182,212 +217,117 @@
           padding: 1rem;
         }
 
-        .header h1 {
+        .hero h1 {
           font-size: 2rem;
         }
 
-        .header p {
-          font-size: 1rem;
+        .hero p {
+          font-size: 1.1rem;
+        }
+
+        .methods {
+          grid-template-columns: 1fr;
         }
 
         .content {
           padding: 2rem 1.5rem;
         }
 
-        .section h2 {
-          font-size: 1.5rem;
+        .cta-button {
+          font-size: 1.2rem;
+          padding: 1.25rem 2rem;
         }
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="header">
+      <div class="hero">
         <h1>🔌 Mesh Plugin Registry</h1>
-        <p>Discover and install plugins for your Meshtastic firmware</p>
-        <p style="font-size: 0.9rem; opacity: 0.85; margin-top: 0.5rem">
+        <p>Extend your Meshtastic firmware with community plugins</p>
+        <div class="hero-meta">
           Built by
           <a
             href="https://meshenvy.org"
             target="_blank"
             rel="noopener noreferrer"
-            style="color: white; text-decoration: underline"
             >MeshEnvy</a
           >
           • Not affiliated with Meshtastic
-        </p>
+        </div>
+      </div>
+
+      <div class="main-cta">
+        <a
+          href="https://meshforge.org/builds/new"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="cta-button"
+          >Browse Meshtastic Plugins →</a
+        >
       </div>
 
       <div class="content">
-        <section class="section">
-          <h2>What is the Mesh Plugin Registry?</h2>
-          <p>
-            The <strong>Mesh Plugin Registry</strong> is a centralized
-            repository built by
+        <div class="methods">
+          <div class="method-card easy">
+            <span class="badge">Recommended</span>
+            <h3>Mesh Forge</h3>
+            <p>
+              Build custom firmware with plugins directly in your browser. No
+              installation or setup required.
+            </p>
+            <ul>
+              <li>Zero installation</li>
+              <li>Simple interface</li>
+              <li>Automatic dependencies</li>
+              <li>Ready-to-flash files</li>
+            </ul>
             <a
-              href="https://meshenvy.org"
+              href="https://meshforge.org/builds/new"
               target="_blank"
               rel="noopener noreferrer"
-              style="color: #667eea"
-              >MeshEnvy</a
+              class="link-button"
+              >Get Started →</a
             >
-            that hosts metadata about available Meshtastic plugins. This
-            registry provides:
-          </p>
-          <ul>
-            <li>A searchable catalog of community-developed plugins</li>
-            <li>Version information and release history</li>
-            <li>Dependency relationships between plugins</li>
-            <li>Author information and repository links</li>
-            <li>Automatic dependency resolution during installation</li>
-          </ul>
-        </section>
+          </div>
 
-        <section class="section">
-          <h2>What is the Mesh Plugin Manager?</h2>
-          <p>
-            The <strong>Mesh Plugin Manager (MPM)</strong> is the command-line
-            tool you use to access the registry and install plugins. It's a
-            lightweight package manager designed specifically for Meshtastic
-            plugins that provides a simple and powerful way to extend your
-            Meshtastic firmware with additional functionality.
-          </p>
-          <div class="highlight-box">
-            <strong>Key Features:</strong>
+          <div class="method-card">
+            <span class="badge hard">Advanced</span>
+            <h3>Mesh Plugin Manager</h3>
+            <p>
+              Command-line tool for building firmware locally. Requires
+              PlatformIO and Poetry setup.
+            </p>
             <ul>
-              <li>Install and manage plugins from the registry</li>
-              <li>Automatic dependency resolution with SemVer support</li>
-              <li>Lockfile generation for reproducible builds</li>
-              <li>Protobuf file generation for plugins</li>
-              <li>Seamless PlatformIO build system integration</li>
+              <li>Local development</li>
+              <li>Full control</li>
+              <li>CLI interface</li>
+              <li>Developer-focused</li>
             </ul>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2>Installation</h2>
-          <p>
-            MPM is installed as a development dependency via Poetry. From the
-            firmware repository root:
-          </p>
-          <div class="code-block">
-            <pre><code class="language-bash">poetry install</code></pre>
-          </div>
-          <div class="highlight-box">
-            <strong>Important:</strong> Poetry must be configured to create the
-            virtual environment in the project directory (<code>.venv</code>) so
-            that the PlatformIO build system can find it. Configure it locally
-            for the project:
-            <div
-              class="code-block"
-              style="margin-top: 0.5rem; margin-bottom: 0.5rem"
+            <a
+              href="https://pypi.org/project/mesh-plugin-manager/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="link-button"
+              >View on PyPI →</a
             >
-              <pre><code class="language-bash">poetry config virtualenvs.in-project true --local</code></pre>
-            </div>
           </div>
-        </section>
+        </div>
 
-        <section class="section">
-          <h2>Usage</h2>
+        <div class="authors">
+          <h3>Creating Your Own Plugin?</h3>
           <p>
-            Once installed, you can use the <code>mpm</code> command via Poetry
-            to browse the registry and manage your plugins:
+            Check out the plugin development guide for documentation on plugin
+            structure, protobuf generation, and module registration.
           </p>
-
-          <div class="code-block">
-            <pre><code class="language-bash"># List installed plugins
-poetry run mpm list
-
-# List all available plugins from registry
-poetry run mpm list --all
-
-# Install a plugin from the registry
-poetry run mpm install &lt;slug&gt;
-
-# Install all plugins from meshtastic.json
-poetry run mpm install
-
-# Remove a plugin
-poetry run mpm remove &lt;slug&gt;
-
-# Generate protobuf files for all plugins
-poetry run mpm proto</code></pre>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2>Adding Your Plugin to the Registry</h2>
-          <p>
-            Have a plugin you'd like to share with the community? Submit a pull
-            request to add it to the Mesh Plugin Registry!
-          </p>
-          <div class="highlight-box">
-            <strong>How to contribute:</strong>
-            <ol
-              style="
-                list-style: decimal;
-                padding-left: 1.5rem;
-                margin-top: 0.5rem;
-              "
-            >
-              <li style="padding-left: 0.5rem; margin-bottom: 0.5rem">
-                Fork the
-                <a
-                  href="https://github.com/MeshEnvy/mesh-forge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style="color: #667eea; text-decoration: none"
-                  >MeshEnvy/mesh-forge</a
-                >
-                repository
-              </li>
-              <li style="padding-left: 0.5rem; margin-bottom: 0.5rem">
-                Edit the <code>registry/registry.json</code> file and add your
-                plugin entry
-              </li>
-              <li style="padding-left: 0.5rem; margin-bottom: 0.5rem">
-                Include all required fields: name, description, version, author,
-                repo URL, and dependencies
-              </li>
-              <li style="padding-left: 0.5rem; margin-bottom: 0.5rem">
-                Submit a pull request with a clear description of your plugin
-              </li>
-            </ol>
-          </div>
-          <p>Your plugin entry should follow this format:</p>
-          <div class="code-block">
-            <pre><code class="language-json">{
-  "your-plugin-slug": {
-    "name": "Your Plugin Name",
-    "description": "A brief description of what your plugin does",
-    "version": "1.0.0",
-    "author": "your-username",
-    "repo": "https://github.com/your-username/your-plugin",
-    "dependencies": {
-      "meshtastic": ">=2.7.0"
-    }
-  }
-}</code></pre>
-          </div>
-        </section>
-
-        <section class="section">
-          <h2>Registry API</h2>
-          <p>
-            The registry is served as a JSON file that can be accessed
-            programmatically. The registry format includes:
-          </p>
-          <ul>
-            <li>Plugin metadata (name, description, version, author)</li>
-            <li>Repository URLs for source code</li>
-            <li>Dependency specifications with version constraints</li>
-            <li>Compatibility information</li>
-          </ul>
-          <p>You can access the registry JSON directly:</p>
-          <div class="code-block">
-            <pre><code class="language-bash">curl https://registry.meshforge.org/registry.json</code></pre>
-          </div>
-        </section>
+          <a
+            href="https://github.com/MeshEnvy/firmware/blob/meshenvy/module-registry/plugins/README.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="link-button"
+            >Plugin Development Guide →</a
+          >
+        </div>
       </div>
 
       <div class="footer">
@@ -410,7 +350,5 @@ poetry run mpm proto</code></pre>
         </p>
       </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
   </body>
 </html>
