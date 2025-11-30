@@ -17,10 +17,10 @@ index cc742c6c1..545b0923a 100644
 \ No newline at end of file
 diff --git a/bin/mpm_pio.py b/bin/mpm_pio.py
 new file mode 100644
-index 000000000..bbb251eff
+index 000000000..b9a359576
 --- /dev/null
 +++ b/bin/mpm_pio.py
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,105 @@
 +#!/usr/bin/env python3
 +"""
 +Mesh Plugin Manager (MPM) - PlatformIO build integration shim.
@@ -52,7 +52,7 @@ index 000000000..bbb251eff
 +
 +def add_to_path(directory, env_var="PATH", label=""):
 +    """Add directory to environment variable if it exists and isn't already present."""
-+    if not directory or not os.path.isdir(directory):
++    if directory is None or not os.path.isdir(directory):
 +        return False
 +    current = os.environ.get(env_var, "")
 +    if directory not in current:
@@ -64,7 +64,7 @@ index 000000000..bbb251eff
 +
 +def add_to_sys_path(directory, label=""):
 +    """Add directory to sys.path if it exists and isn't already present."""
-+    if not directory or not os.path.isdir(directory):
++    if directory is None or not os.path.isdir(directory):
 +        return False
 +    if directory not in sys.path:
 +        sys.path.insert(0, directory)
@@ -109,8 +109,9 @@ index 000000000..bbb251eff
 +
 +for site_packages in [mpm_site_packages, firmware_site_packages]:
 +    add_to_path(site_packages, "PYTHONPATH")
-+    nanopb_generator = os.path.join(site_packages, "nanopb", "generator")
-+    add_to_path(nanopb_generator, "PATH", "nanopb/generator")
++    if site_packages:
++        nanopb_generator = os.path.join(site_packages, "nanopb", "generator")
++        add_to_path(nanopb_generator, "PATH", "nanopb/generator")
 +
 +# Use the installed `mpm` package
 +from mesh_plugin_manager.build import init_plugins  # type: ignore[import]
