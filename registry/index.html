@@ -267,43 +267,51 @@
         <section class="section">
           <h2>Installation</h2>
           <p>
-            To access the registry and install plugins, first install MPM using
-            pip:
+            MPM is installed as a development dependency via Poetry. From the
+            firmware repository root:
           </p>
           <div class="code-block">
-            <pre><code class="language-bash">pip install mesh-plugin-manager</code></pre>
+            <pre><code class="language-bash">poetry install</code></pre>
           </div>
-          <p>Or install from source:</p>
-          <div class="code-block">
-            <pre><code class="language-bash">pip install -e .</code></pre>
+          <div class="highlight-box">
+            <strong>Important:</strong> Poetry must be configured to create the
+            virtual environment in the project directory (<code>.venv</code>) so
+            that the PlatformIO build system can find it. Configure it locally
+            for the project:
+            <div
+              class="code-block"
+              style="margin-top: 0.5rem; margin-bottom: 0.5rem"
+            >
+              <pre><code class="language-bash">poetry config virtualenvs.in-project true --local</code></pre>
+            </div>
           </div>
         </section>
 
         <section class="section">
           <h2>Usage</h2>
           <p>
-            Once installed, you can use the <code>mpm</code> command to browse
-            the registry and manage your plugins:
+            Once installed, you can use the <code>mpm</code> command via Poetry
+            to browse the registry and manage your plugins:
           </p>
 
           <div class="code-block">
             <pre><code class="language-bash"># List installed plugins
-mpm list
+poetry run mpm list
 
 # List all available plugins from registry
-mpm list --all
+poetry run mpm list --all
 
 # Install a plugin from the registry
-mpm install &lt;slug&gt;
+poetry run mpm install &lt;slug&gt;
 
 # Install all plugins from meshtastic.json
-mpm install
+poetry run mpm install
 
 # Remove a plugin
-mpm remove &lt;slug&gt;
+poetry run mpm remove &lt;slug&gt;
 
 # Generate protobuf files for all plugins
-mpm proto</code></pre>
+poetry run mpm proto</code></pre>
           </div>
         </section>
 
