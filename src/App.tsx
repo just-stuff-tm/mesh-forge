@@ -9,7 +9,6 @@ import {
 } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from './components/Navbar'
-import Browse from './pages/Browse'
 import BuildNew from './pages/BuildNew'
 import BuildProgress from './pages/BuildProgress'
 import Dashboard from './pages/Dashboard'
@@ -39,7 +38,6 @@ function App() {
         <ConditionalNavbar />
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/browse" element={<Browse />} />
           <Route path="/builds/new/:buildHash" element={<BuildNew />} />
           <Route path="/builds/new" element={<BuildNew />} />
           <Route path="/builds/:buildHash" element={<BuildProgress />} />
@@ -52,7 +50,6 @@ function App() {
         <ConditionalNavbar />
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/browse" element={<Browse />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/builds/new/:buildHash" element={<BuildNew />} />
           <Route path="/builds/new" element={<BuildNew />} />
