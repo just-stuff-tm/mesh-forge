@@ -17,10 +17,10 @@ index cc742c6c1..545b0923a 100644
 \ No newline at end of file
 diff --git a/bin/mpm_pio.py b/bin/mpm_pio.py
 new file mode 100644
-index 000000000..9c000d6e6
+index 000000000..1e42b8919
 --- /dev/null
 +++ b/bin/mpm_pio.py
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,77 @@
 +#!/usr/bin/env python3
 +"""
 +Mesh Plugin Manager (MPM) - PlatformIO build integration shim.
@@ -69,6 +69,14 @@ index 000000000..9c000d6e6
 +    if _pyvendor_bin not in current_path:
 +        os.environ["PATH"] = f"{_pyvendor_bin}:{current_path}" if current_path else _pyvendor_bin
 +        print(f"Added {_pyvendor_bin} to PATH")
++
++# Add pyvendor/nanopb/generator to PATH so nanopb generator executables can be found
++_nanopb_generator = os.path.join(_pyvendor, "nanopb", "generator")
++if os.path.isdir(_nanopb_generator):
++    current_path = os.environ.get("PATH", "")
++    if _nanopb_generator not in current_path:
++        os.environ["PATH"] = f"{_nanopb_generator}:{current_path}" if current_path else _nanopb_generator
++        print(f"Added {_nanopb_generator} to PATH")
 +
 +if IS_PLATFORMIO:
 +    # Use the installed `mpm` package
