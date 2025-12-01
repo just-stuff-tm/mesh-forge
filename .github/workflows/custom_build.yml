@@ -163,14 +163,19 @@ jobs:
           - The build flags above must be set exactly as shown to reproduce the build
           EOF
           
-          # Stage MESHFORGE.md so it gets included in the archive
-          git add -f MESHFORGE.md
+          # Create MESHFORGE.md so it gets included in the archive
+          # (already created above, just ensuring it exists)
           
-          # Use git archive to create tar, which automatically:
-          # - Respects .gitignore (excludes .pio/, build artifacts, etc.)
-          # - Excludes .git directory
+          # Create archive from working directory to include plugins installed by mpm
+          # Exclude .git, .pio, and build artifacts
           cd ..
-          git -C firmware archive --format=tar HEAD | gzip -9 > "${{ inputs.build_hash }}.tar.gz"
+          tar --exclude='.git' \
+              --exclude='.pio' \
+              --exclude='*.bin' \
+              --exclude='*.uf2' \
+              --exclude='build' \
+              -czf "${{ inputs.build_hash }}.tar.gz" \
+              -C firmware .
           
           update_status uploading_source_archive
 
