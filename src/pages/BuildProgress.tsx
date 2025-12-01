@@ -57,7 +57,7 @@ export default function BuildProgress() {
       <div className="min-h-screen bg-slate-950 text-white p-8">
         <div className="max-w-4xl mx-auto space-y-4">
           <Link
-            to="/builds/new"
+            to={`/builds/new/${buildHash}`}
             className="inline-flex items-center text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -151,7 +151,7 @@ export default function BuildProgress() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <Link
-            to="/builds/new"
+            to={`/builds/new/${build.buildHash}`}
             className="inline-flex items-center text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
