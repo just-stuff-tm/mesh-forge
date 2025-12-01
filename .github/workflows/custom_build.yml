@@ -159,7 +159,7 @@ jobs:
 
           ## Notes
 
-          - PlatformIO dependencies (`.pio/`) are not included - PlatformIO will download these as needed
+          - PlatformIO dependencies (\`.pio/\`) are not included - PlatformIO will download these as needed
           - The build flags above must be set exactly as shown to reproduce the build
           EOF
           
