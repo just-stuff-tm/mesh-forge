@@ -53,6 +53,7 @@ http.route({
       buildId: payload.build_id,
       status: payload.state,
       artifactPath: payload.artifactPath,
+      sourceUrl: payload.sourcePath,
       githubRunId,
     })
 

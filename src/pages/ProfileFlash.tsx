@@ -240,6 +240,11 @@ export default function ProfileFlash() {
               >
                 Download Firmware
               </Button>
+            </div>
+          )}
+
+          {build.sourceUrl && (
+            <div className="space-y-2">
               <Button
                 onClick={handleSourceDownload}
                 className="bg-slate-700 hover:bg-slate-600 w-full"

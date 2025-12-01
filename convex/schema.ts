@@ -30,6 +30,7 @@ export const buildFields = {
   // Optional props
   completedAt: v.optional(v.number()),
   artifactPath: v.optional(v.string()),
+  sourceUrl: v.optional(v.string()),
   githubRunId: v.optional(v.number()),
 }
 

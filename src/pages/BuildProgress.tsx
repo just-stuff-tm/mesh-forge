@@ -220,6 +220,11 @@ export default function BuildProgress() {
               {downloadError && (
                 <p className="text-sm text-red-400">{downloadError}</p>
               )}
+            </div>
+          )}
+
+          {build.sourceUrl && (
+            <div className="space-y-2">
               <Button
                 onClick={handleSourceDownload}
                 className="w-full bg-slate-700 hover:bg-slate-600"

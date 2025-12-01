@@ -239,6 +239,7 @@ export const updateBuildStatus = internalMutation({
       'status',
       'completedAt',
       'artifactPath',
+      'sourceUrl',
       'githubRunId',
     ]),
     buildId: v.id('builds'),
@@ -249,6 +250,7 @@ export const updateBuildStatus = internalMutation({
 
     const updateData: BuildUpdateData & {
       artifactPath?: string
+      sourceUrl?: string
       githubRunId?: number
     } = {
       status: args.status,
@@ -262,6 +264,11 @@ export const updateBuildStatus = internalMutation({
     // Set artifactPath if provided
     if (args.artifactPath !== undefined) {
       updateData.artifactPath = args.artifactPath
+    }
+
+    // Set sourceUrl if provided
+    if (args.sourceUrl !== undefined) {
+      updateData.sourceUrl = args.sourceUrl
     }
 
     // Set githubRunId if provided
@@ -433,7 +440,16 @@ export const generateSourceDownloadUrl = mutation({
     const build = await ctx.db.get(args.buildId)
     if (!build) throw new Error('Build not found')
 
-    const objectKey = `${build.buildHash}.tar.gz`
+    // Use sourceUrl if available, otherwise fall back to constructing from buildHash
+    let objectKey: string
+    if (build.sourceUrl) {
+      // Remove leading slash if present
+      objectKey = build.sourceUrl.startsWith('/')
+        ? build.sourceUrl.substring(1)
+        : build.sourceUrl
+    } else {
+      objectKey = `${build.buildHash}.tar.gz`
+    }
 
     return await generateAuthenticatedDownloadUrl(
       ctx,
@@ -454,7 +470,16 @@ export const generateAnonymousSourceDownloadUrl = mutation({
     slug: v.string(),
   },
   handler: async (_ctx, args) => {
-    const objectKey = `${args.build.buildHash}.tar.gz`
+    // Use sourceUrl if available, otherwise fall back to constructing from buildHash
+    let objectKey: string
+    if (args.build.sourceUrl) {
+      // Remove leading slash if present
+      objectKey = args.build.sourceUrl.startsWith('/')
+        ? args.build.sourceUrl.substring(1)
+        : args.build.sourceUrl
+    } else {
+      objectKey = `${args.build.buildHash}.tar.gz`
+    }
 
     return await generateAnonymousDownloadUrlHelper(
       args.build,
