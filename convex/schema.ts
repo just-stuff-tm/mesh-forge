@@ -32,6 +32,7 @@ export const buildFields = {
   artifactPath: v.optional(v.string()),
   sourceUrl: v.optional(v.string()),
   githubRunId: v.optional(v.number()),
+  githubRunIdHistory: v.optional(v.array(v.number())),
 }
 
 export const pluginFields = {
@@ -40,11 +41,17 @@ export const pluginFields = {
   updatedAt: v.number(),
 }
 
+export const userSettingsFields = {
+  userId: v.id('users'),
+  isAdmin: v.boolean(),
+}
+
 export const schema = defineSchema({
   ...authTables,
   profiles: defineTable(profileFields),
   builds: defineTable(buildFields),
   plugins: defineTable(pluginFields).index('by_slug', ['slug']),
+  userSettings: defineTable(userSettingsFields).index('by_user', ['userId']),
 })
 
 export type ProfilesDoc = Doc<'profiles'>

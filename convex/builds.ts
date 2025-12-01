@@ -252,6 +252,7 @@ export const updateBuildStatus = internalMutation({
       artifactPath?: string
       sourceUrl?: string
       githubRunId?: number
+      githubRunIdHistory?: number[]
     } = {
       status: args.status,
     }
@@ -272,9 +273,21 @@ export const updateBuildStatus = internalMutation({
     }
 
     // Set githubRunId if provided
+    // When a new run ID comes in, move the previous one to history
+    const existingHistory = [...new Set(build.githubRunIdHistory || [])]
     if (args.githubRunId !== undefined) {
+      const existingRunId = build.githubRunId
+      // Only update if the run ID is actually changing
+      if (existingRunId !== undefined && existingRunId !== args.githubRunId) {
+        // Prepend existing run ID to history array, avoiding duplicates
+        existingHistory.unshift(existingRunId)
+      }
       updateData.githubRunId = args.githubRunId
     }
+
+    updateData.githubRunIdHistory = [...new Set(existingHistory)].filter(
+      (id) => id !== args.githubRunId
+    )
 
     await ctx.db.patch(args.buildId, updateData)
   },

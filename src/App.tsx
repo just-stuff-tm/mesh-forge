@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import Navbar from './components/Navbar'
+import Admin from './pages/Admin'
 import BuildNew from './pages/BuildNew'
 import BuildProgress from './pages/BuildProgress'
 import Dashboard from './pages/Dashboard'
@@ -51,6 +52,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/builds/new/:buildHash" element={<BuildNew />} />
           <Route path="/builds/new" element={<BuildNew />} />
           <Route path="/builds/:buildHash" element={<BuildProgress />} />
