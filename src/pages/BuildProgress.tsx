@@ -1,6 +1,13 @@
 import { useMutation, useQuery } from 'convex/react'
 import { pick } from 'convex-helpers'
-import { ArrowLeft, CheckCircle, Loader2, Share2, XCircle } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+  Loader2,
+  Share2,
+  XCircle,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -146,6 +153,53 @@ export default function BuildProgress() {
     }
   }
 
+  // Compute build flags from config (same logic as computeFlagsFromConfig in convex/builds.ts)
+  const computeFlagsFromConfig = (config: typeof build.config): string => {
+    return Object.keys(config.modulesExcluded)
+      .sort()
+      .filter((module) => config.modulesExcluded[module])
+      .map((moduleExcludedName: string) => `-D${moduleExcludedName}=1`)
+      .join(' ')
+  }
+
+  // Generate GitHub issue URL with prefilled body
+  const generateIssueUrl = (): string => {
+    const flags = computeFlagsFromConfig(build.config)
+    const plugins = build.config.pluginsEnabled?.join(', ') || '(none)'
+    const timestamp = new Date(build.startedAt).toISOString()
+    const githubRunLink = githubActionUrl
+      ? `[View run](${githubActionUrl})`
+      : '(not available)'
+
+    const issueTitle = `Build ${build.status === 'failure' ? 'Failed' : 'Issue'}: ${targetLabel} (${build.buildHash.substring(0, 8)})`
+
+    const issueBody = `## Build ${build.status === 'failure' ? 'Failed' : 'Information'}
+
+**Build Hash**: \`${build.buildHash}\`
+**Target Board**: ${build.config.target}
+**Firmware Version**: ${build.config.version}
+**Build Flags**: ${flags || '(none)'}
+**Plugins**: ${plugins}
+**Build Timestamp**: ${timestamp}
+
+**GitHub Run**: ${githubRunLink}
+
+## Additional Information
+(Please add any additional details about the issue here)`
+
+    const baseUrl = 'https://github.com/MeshEnvy/mesh-forge/issues/new'
+    const params = new URLSearchParams({
+      title: issueTitle,
+      body: issueBody,
+    })
+
+    return `${baseUrl}?${params.toString()}`
+  }
+
+  const handleReportIssue = () => {
+    window.open(generateIssueUrl(), '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -190,13 +244,23 @@ export default function BuildProgress() {
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handleShare}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              {shareUrlCopied ? 'Copied!' : 'Share Build'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleReportIssue}
+                variant="outline"
+                className="border-slate-600 hover:bg-slate-800"
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Report an Issue
+              </Button>
+              <Button
+                onClick={handleShare}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                {shareUrlCopied ? 'Copied!' : 'Share Build'}
+              </Button>
+            </div>
           </div>
 
           {status !== 'success' && status !== 'failure' && (
