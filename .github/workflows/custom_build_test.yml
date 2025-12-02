@@ -1,0 +1,258 @@
+name: Custom Firmware Build (Test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target board (e.g. rak4631)'
+        required: true
+        type: string
+      flags:
+        description: 'Build flags (e.g. -DMESHTASTIC_EXCLUDE_MQTT)'
+        required: false
+        type: string
+      version:
+        description: 'Firmware Version (Tag/Branch)'
+        required: true
+      build_id:
+        description: 'Convex Build ID'
+        required: true
+        type: string
+      build_hash:
+        description: 'Build hash for artifact naming'
+        required: true
+        type: string
+      convex_url:
+        description: 'Convex Site URL'
+        required: true
+        type: string
+      plugins:
+        description: 'Space-separated plugin slugs to install'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CONVEX_URL: ${{ inputs.convex_url }}
+      BUILD_ID: ${{ inputs.build_id }}
+      CONVEX_BUILD_TOKEN: ${{ secrets.CONVEX_BUILD_TOKEN }}
+    steps:
+      - name: Setup status update helper
+        shell: bash
+        run: |
+          cat > /tmp/update_status.sh << 'EOF'
+          update_status() {
+            local state=$1
+            local artifact_path=$2
+            local source_path=$3
+            local payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
+            if [ -n "$artifact_path" ] && [ -n "$source_path" ]; then
+              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"artifactPath\": \"$artifact_path\", \"sourcePath\": \"$source_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
+            elif [ -n "$artifact_path" ]; then
+              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"artifactPath\": \"$artifact_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
+            elif [ -n "$source_path" ]; then
+              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"sourcePath\": \"$source_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
+            fi
+            echo "✅ Updated status: $state"
+            curl -sSf -X POST "$CONVEX_URL/github-webhook" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $CONVEX_BUILD_TOKEN" \
+              -d "$payload" || true
+          }
+          EOF
+          chmod +x /tmp/update_status.sh
+
+      - name: Update Status - Setting Up Python
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          update_status setting_up_python
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Update Status - Fetching Firmware
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          update_status checking_out_firmware
+
+      - name: Checkout Firmware
+        uses: actions/checkout@v4
+        with:
+          repository: meshtastic/firmware
+          ref: ${{ inputs.version }}
+          path: firmware
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Preparing Source
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+
+          update_status installing_wrangler
+          npm install -g wrangler
+
+          update_status installing_pip
+          python -m pip install --upgrade pip
+
+          update_status installing_mpm
+          pip install mesh-plugin-manager
+
+          cd firmware
+          update_status patching_firmware
+          mpm init
+
+          update_status installing_meshtastic_plugins
+          mpm install ${{ inputs.plugins }}
+
+          # Create MESHFORGE.md with build metadata
+          cat > MESHFORGE.md << EOF
+          # Meshtastic Firmware Build Metadata
+
+          This archive contains the complete source code and dependencies used to build this firmware.
+
+          ## Build Configuration
+
+          - **Target Board**: ${{ inputs.target }}
+          - **Firmware Version**: ${{ inputs.version }}
+          - **Build Hash**: ${{ inputs.build_hash }}
+          - **Build Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          ## Build Flags / Compiler Switches
+
+          \`\`\`
+          ${{ inputs.flags || '(none)' }}
+          \`\`\`
+
+          ## How to Build
+
+          1. Extract this archive:
+             \`\`\`bash
+             tar -xzf source.tar.gz
+             \`\`\`
+
+          2. Navigate to the firmware directory:
+             \`\`\`bash
+             cd firmware
+             \`\`\`
+
+          3. Install PlatformIO (if not already installed):
+             \`\`\`bash
+             pip install platformio
+             \`\`\`
+
+          4. Build with the exact same configuration:
+             \`\`\`bash
+             export PLATFORMIO_BUILD_FLAGS="${{ inputs.flags }}"
+             pio run -e ${{ inputs.target }}
+             \`\`\`
+
+          ## Notes
+
+          - PlatformIO dependencies (\`.pio/\`) are not included - PlatformIO will download these as needed
+          - The build flags above must be set exactly as shown to reproduce the build
+          EOF
+          
+          # Create MESHFORGE.md so it gets included in the archive
+          # (already created above, just ensuring it exists)
+          
+          # Create archive from working directory to include plugins installed by mpm
+          # Exclude .git, .pio, and build artifacts
+          cd ..
+          tar --exclude='.git' \
+              --exclude='.pio' \
+              --exclude='*.bin' \
+              --exclude='*.uf2' \
+              --exclude='build' \
+              -czf "source-${{ inputs.build_hash }}.tar.gz" \
+              -C firmware .
+          
+          update_status uploading_source_archive
+
+          SOURCE_ARCHIVE_PATH="/source-${{ inputs.build_hash }}.tar.gz"
+          SOURCE_OBJECT_PATH="${R2_BUCKET_NAME}/source-${{ inputs.build_hash }}.tar.gz"
+          
+          # Upload source archive to R2
+          wrangler r2 object put "$SOURCE_OBJECT_PATH" \
+            --file "source-${{ inputs.build_hash }}.tar.gz" --remote
+
+          update_status uploaded_source "" "$SOURCE_ARCHIVE_PATH"
+
+      - name: Update Status - Loading caches
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          update_status loading_caches
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio/libdeps
+          key: ${{ runner.os }}-pio-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+
+      - name: Building Firmware
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+
+          update_status installing_platformio
+          pip install platformio
+
+          cd firmware
+          update_status building_firmware
+          echo "Building for target: ${{ inputs.target }}"
+          echo "Flags: ${{ inputs.flags }}"
+          echo "Plugins: ${{ inputs.plugins }}"
+
+          # Inject flags into platformio.ini or environment
+          export PLATFORMIO_BUILD_FLAGS="${{ inputs.flags }}"
+          echo "PLATFORMIO_BUILD_FLAGS set to: $PLATFORMIO_BUILD_FLAGS"
+
+          pio run -e ${{ inputs.target }}
+
+          update_status uploading_firmware
+          # Create tar.gz archive of firmware files from the target's build directory
+          tar -czf "firmware-${{ inputs.build_hash }}.tar.gz" -C ".pio/build/${{ inputs.target }}" firmware*.*
+
+          # Determine artifact path (with leading slash for storage)
+          ARTIFACT_PATH="/firmware-${{ inputs.build_hash }}.tar.gz"
+          # Object path for wrangler is bucket/key without leading slash
+          OBJECT_PATH="${R2_BUCKET_NAME}/firmware-${{ inputs.build_hash }}.tar.gz"
+
+          # Upload to R2 with hash and tar.gz extension
+          wrangler r2 object put "$OBJECT_PATH" \
+            --file "firmware-${{ inputs.build_hash }}.tar.gz" --remote
+
+          SOURCE_ARCHIVE_PATH="/source-${{ inputs.build_hash }}.tar.gz"
+          update_status uploaded "$ARTIFACT_PATH" "$SOURCE_ARCHIVE_PATH"
+
+      - name: Update Build Status - Final
+        if: always()
+        shell: bash
+        run: |
+          source /tmp/update_status.sh
+          STATUS="${{ job.status }}"
+          if [ "$STATUS" = "success" ]; then
+            STATUS_MSG="success"
+          else
+            STATUS_MSG="failure"
+          fi
+          update_status "$STATUS_MSG"
