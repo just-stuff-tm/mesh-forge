@@ -45,13 +45,11 @@ jobs:
           cat > /tmp/update_status.sh << 'EOF'
           update_status() {
             local state=$1
-            local artifact_path=$2
+            local firmware_path=$2
             local source_path=$3
             local payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
-            if [ -n "$artifact_path" ] && [ -n "$source_path" ]; then
-              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"artifactPath\": \"$artifact_path\", \"sourcePath\": \"$source_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
-            elif [ -n "$artifact_path" ]; then
-              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"artifactPath\": \"$artifact_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
+            if [ -n "$firmware_path" ]; then
+              payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"firmwarePath\": \"$firmware_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
             elif [ -n "$source_path" ]; then
               payload="{\"build_id\": \"$BUILD_ID\", \"state\": \"$state\", \"sourcePath\": \"$source_path\", \"github_run_id\": \"$GITHUB_RUN_ID\"}"
             fi
@@ -161,48 +159,13 @@ jobs:
 
           - PlatformIO dependencies (\`.pio/\`) are not included - PlatformIO will download these as needed
           - The build flags above must be set exactly as shown to reproduce the build
-
-          ## License Compliance
-
-          This firmware build and all source code contained in this archive are licensed under the **GNU General Public License version 3 (GPL-3.0)** or later.
-
-          ### Your Rights
-
-          Under the GPL-3.0 license, you have the freedom to:
-
-          - **Use** this firmware for any purpose
-          - **Study** how it works and examine the source code
-          - **Modify** the source code to suit your needs
-          - **Distribute** original or modified versions
-          - **Share** improvements you make
-
-          ### Your Obligations
-
-          If you distribute this firmware (original or modified), you must:
-
-          - **Provide source code** - Make the complete, corresponding source code available to recipients
-          - **Include license** - Distribute the GPL-3.0 license text with the firmware
-          - **Preserve notices** - Maintain all copyright and license notices
-          - **Same license** - License any modifications under GPL-3.0 or compatible license
-          - **Document changes** - If you modify the code, document your changes
-
-          ### License Compliance Statement
-
-          This build archive contains source code from the Meshtastic firmware project and related dependencies, all of which are compliant with GPL-3.0 licensing requirements. The complete source code necessary to build this firmware is included in this archive, fulfilling the GPL-3.0 requirement to provide corresponding source code.
-
-          ### Full License Text
-
-          A copy of the GNU General Public License version 3 is included in the \`LICENSE\` file in the firmware directory. You can also view it online at: https://www.gnu.org/licenses/gpl-3.0.html
-
-          ### Questions?
-
-          For questions about licensing or compliance, please refer to:
-          - The GPL-3.0 FAQ: https://www.gnu.org/licenses/gpl-faq.html
-          - The Meshtastic project: https://meshtastic.org
           EOF
           
           # Create MESHFORGE.md so it gets included in the archive
           # (already created above, just ensuring it exists)
+          
+          # Define archive suffix for consistent naming
+          ARTIFACT_ARCHIVE_SUFFIX="-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
           
           # Create archive from working directory to include plugins installed by mpm
           # Exclude .git, .pio, and build artifacts
@@ -212,17 +175,17 @@ jobs:
               --exclude='*.bin' \
               --exclude='*.uf2' \
               --exclude='build' \
-              -czf "source-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz" \
+              -czf "source${ARTIFACT_ARCHIVE_SUFFIX}" \
               -C firmware .
           
           update_status uploading_source_archive
 
-          SOURCE_ARCHIVE_PATH="/source-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
-          SOURCE_OBJECT_PATH="${R2_BUCKET_NAME}/source-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
+          SOURCE_ARCHIVE_PATH="/source${ARTIFACT_ARCHIVE_SUFFIX}"
+          SOURCE_OBJECT_PATH="${R2_BUCKET_NAME}/source${ARTIFACT_ARCHIVE_SUFFIX}"
           
           # Upload source archive to R2
           wrangler r2 object put "$SOURCE_OBJECT_PATH" \
-            --file "source-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz" --remote
+            --file "source${ARTIFACT_ARCHIVE_SUFFIX}" --remote
 
           update_status uploaded_source "" "$SOURCE_ARCHIVE_PATH"
 
@@ -267,14 +230,17 @@ jobs:
           pio run -e ${{ inputs.target }}
 
           update_status uploading_firmware
-          # Create tar.gz archive of firmware files from the target's build directory
+          # Create tar.gz archive of all build artifacts from the target's build directory
           # Change to the build directory and create archive from there
           cd ".pio/build/${{ inputs.target }}"
-          if ls firmware* 1> /dev/null 2>&1; then
-            tar -czf "../../../firmware-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz" firmware*
+          # Find all build artifacts with specified extensions
+          ARTIFACTS=$(find . -maxdepth 1 -type f \( -name "*.bin" -o -name "*.hex" -o -name "*.elf" -o -name "*.uf2" -o -name "*.dat" -o -name "*.zip" \))
+          if [ -n "$ARTIFACTS" ]; then
+            # Create archive with all found artifacts
+            tar -czf "../../../firmware${ARTIFACT_ARCHIVE_SUFFIX}" $(find . -maxdepth 1 -type f \( -name "*.bin" -o -name "*.hex" -o -name "*.elf" -o -name "*.uf2" -o -name "*.dat" -o -name "*.zip" \))
             cd ../../..
           else
-            echo "Error: No firmware files found matching firmware* in .pio/build/${{ inputs.target }}/"
+            echo "Error: No build artifacts found matching [.bin, .hex, .elf, .uf2, .dat, .zip] in .pio/build/${{ inputs.target }}/"
             echo "Recursive listing of .pio/build/${{ inputs.target }}/:"
             find . -type f -ls || true
             cd ../../..
@@ -282,15 +248,15 @@ jobs:
           fi
 
           # Determine artifact path (with leading slash for storage)
-          ARTIFACT_PATH="/firmware-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
+          ARTIFACT_PATH="/firmware${ARTIFACT_ARCHIVE_SUFFIX}"
           # Object path for wrangler is bucket/key without leading slash
-          OBJECT_PATH="${R2_BUCKET_NAME}/firmware-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
+          OBJECT_PATH="${R2_BUCKET_NAME}/firmware${ARTIFACT_ARCHIVE_SUFFIX}"
 
           # Upload to R2 with hash and tar.gz extension
           wrangler r2 object put "$OBJECT_PATH" \
-            --file "firmware-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz" --remote
+            --file "firmware${ARTIFACT_ARCHIVE_SUFFIX}" --remote
 
-          SOURCE_ARCHIVE_PATH="/source-${{ inputs.build_hash }}-${{ github.run_id }}.tar.gz"
+          SOURCE_ARCHIVE_PATH="/source${ARTIFACT_ARCHIVE_SUFFIX}"
           update_status uploaded "$ARTIFACT_PATH" "$SOURCE_ARCHIVE_PATH"
 
       - name: Update Build Status - Final
