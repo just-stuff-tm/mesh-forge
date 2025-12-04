@@ -269,7 +269,7 @@ export default function BuildNew() {
             </h1>
             <p className="text-slate-400 mt-2 max-w-2xl">
               Choose your Meshtastic target, adjust optional modules, and queue
-              a new build instantly. We’ll send you to the build status page as
+              a new build instantly. We'll send you to the build status page as
               soon as it starts.
             </p>
           </div>
