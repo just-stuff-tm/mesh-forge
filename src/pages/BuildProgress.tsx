@@ -1,4 +1,4 @@
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -8,7 +8,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { BuildDownloadButton } from '@/components/BuildDownloadButton'
 import { Button } from '@/components/ui/button'
@@ -19,10 +19,13 @@ import { TARGETS } from '../constants/targets'
 
 export default function BuildProgress() {
   const { buildHash } = useParams<{ buildHash: string }>()
+  const navigate = useNavigate()
   const build = useQuery(
     api.builds.getByHash,
     buildHash ? { buildHash } : 'skip'
   )
+  const isAdmin = useQuery(api.admin.isAdmin)
+  const retryBuild = useMutation(api.admin.retryBuild)
   const [shareUrlCopied, setShareUrlCopied] = useState(false)
 
   if (!buildHash) {
@@ -130,6 +133,7 @@ export default function BuildProgress() {
     const githubRunLink = githubActionUrl
       ? `[View run](${githubActionUrl})`
       : '(not available)'
+    const buildPageUrl = `${window.location.origin}/builds/${build.buildHash}`
 
     const issueTitle = `Build ${build.status === 'failure' ? 'Failed' : 'Issue'}: ${targetLabel} (${build.buildHash.substring(0, 8)})`
 
@@ -142,6 +146,7 @@ export default function BuildProgress() {
 **Plugins**: ${plugins}
 **Build Timestamp**: ${timestamp}
 
+**Build Page**: [View build page](${buildPageUrl})
 **GitHub Run**: ${githubRunLink}
 
 ## Additional Information
@@ -158,6 +163,50 @@ export default function BuildProgress() {
 
   const handleReportIssue = () => {
     window.open(generateIssueUrl(), '_blank', 'noopener,noreferrer')
+  }
+
+  const handleRetry = async () => {
+    if (!build?._id) return
+    try {
+      await retryBuild({ buildId: build._id })
+      toast.success('Build retry initiated', {
+        description: 'The build has been queued with the latest YAML.',
+      })
+    } catch (error) {
+      toast.error('Failed to retry build', {
+        description: String(error),
+      })
+    }
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      success: {
+        bg: 'bg-green-500/20',
+        text: 'text-green-400',
+        label: 'Success',
+      },
+      failure: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Failed' },
+      queued: {
+        bg: 'bg-yellow-500/20',
+        text: 'text-yellow-400',
+        label: 'Queued',
+      },
+    }
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      bg: 'bg-slate-500/20',
+      text: 'text-slate-400',
+      label: status,
+    }
+    return (
+      <span className={`px-2 py-1 ${config.bg} ${config.text} rounded text-sm`}>
+        {config.label}
+      </span>
+    )
+  }
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString()
   }
 
   return (
@@ -222,6 +271,108 @@ export default function BuildProgress() {
               </Button>
             </div>
           </div>
+
+          {/* Admin Controls Section */}
+          {isAdmin === true && build && (
+            <div className="border-t border-slate-800 pt-4 mt-4 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Admin Controls</h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-sm font-mono font-semibold text-white">
+                      {build.buildHash.substring(0, 8)}
+                    </span>
+                    {getStatusBadge(build.status)}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => navigate(`/builds/new/${build.buildHash}`)}
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 hover:bg-slate-800"
+                  >
+                    Clone
+                  </Button>
+                  <Button
+                    onClick={handleRetry}
+                    className="bg-cyan-600 hover:bg-cyan-700"
+                    size="sm"
+                  >
+                    Re-run Build
+                  </Button>
+                </div>
+              </div>
+
+              {/* Build Configuration Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-slate-500">Target</span>
+                    <div className="text-sm font-mono text-white mt-1">
+                      {build.config.target}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-slate-500">Version</span>
+                    <div className="text-sm font-mono text-white mt-1">
+                      {build.config.version}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-slate-500">
+                      {build.completedAt ? 'Completed' : 'Started'}
+                    </span>
+                    <div className="text-sm text-white mt-1">
+                      {build.completedAt
+                        ? formatDate(build.completedAt)
+                        : build.startedAt
+                          ? formatDate(build.startedAt)
+                          : 'Unknown'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Run History Section */}
+              {(build.githubRunId ||
+                (build.githubRunIdHistory?.length ?? 0) > 0) && (
+                <div className="pt-4 border-t border-slate-800">
+                  <span className="text-xs text-slate-500 mb-2 block">
+                    Run History
+                    {(build.githubRunIdHistory?.length ?? 0) > 0 &&
+                      ` (${(build.githubRunIdHistory?.length ?? 0) + (build.githubRunId ? 1 : 0)} total)`}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {build.githubRunId && (
+                      <a
+                        href={`https://github.com/MeshEnvy/mesh-forge/actions/runs/${build.githubRunId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 underline font-semibold"
+                        title="Current run"
+                      >
+                        {build.githubRunId}
+                      </a>
+                    )}
+                    {build.githubRunIdHistory?.map((id) => (
+                      <a
+                        key={id}
+                        href={`https://github.com/MeshEnvy/mesh-forge/actions/runs/${id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                      >
+                        {id}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {status !== 'success' && status !== 'failure' && (
             <div className="rounded-lg border border-slate-800/70 bg-slate-950/60 p-4">
