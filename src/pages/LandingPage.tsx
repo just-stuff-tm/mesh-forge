@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { DiscordButton } from '@/components/DiscordButton'
 
 function QuickBuildIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -45,6 +46,11 @@ export default function LandingPage() {
               <QuickBuildIcon className="mr-2 h-5 w-5" />
               Quick Build
             </Button>
+            <DiscordButton
+              size="lg"
+              variant="default"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-purple-500/50"
+            />
           </div>
 
           {/* Benefits Grid */}
