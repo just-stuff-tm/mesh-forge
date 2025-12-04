@@ -1,12 +1,12 @@
 import { useAuthActions } from '@convex-dev/auth/react'
-import { Authenticated, useQuery } from 'convex/react'
+import { Authenticated, Unauthenticated, useQuery } from 'convex/react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { DiscordButton } from '@/components/DiscordButton'
 import { api } from '../../convex/_generated/api'
 
 export default function Navbar() {
-  const { signOut } = useAuthActions()
+  const { signOut, signIn } = useAuthActions()
   const isAdmin = useQuery(api.admin.isAdmin)
 
   return (
@@ -51,6 +51,14 @@ export default function Navbar() {
               variant="default"
               className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-purple-500/50"
             />
+            <Unauthenticated>
+              <Button
+                onClick={() => signIn('google', { redirectTo: window.location.href })}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                Sign In
+              </Button>
+            </Unauthenticated>
             <Authenticated>
               <Button variant="outline" onClick={() => signOut()}>
                 Sign Out
