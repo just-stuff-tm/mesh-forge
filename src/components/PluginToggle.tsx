@@ -68,8 +68,8 @@ export function PluginToggle({
         <Switch
           checked={isEnabled}
           onCheckedChange={onToggle}
-          labelLeft="Excluded"
-          labelRight="Included"
+          labelLeft="Skip"
+          labelRight="Add"
           className={isEnabled ? 'bg-green-600' : 'bg-slate-600'}
         />
       </div>

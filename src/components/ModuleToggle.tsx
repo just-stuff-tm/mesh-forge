@@ -24,8 +24,8 @@ export function ModuleToggle({
         <Switch
           checked={isExcluded}
           onCheckedChange={onToggle}
-          labelLeft="Default"
-          labelRight="Excluded"
+          labelLeft="Add"
+          labelRight="Skip"
         />
       </div>
     </div>
