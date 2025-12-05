@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { humanizeStatus } from '@/lib/utils'
 import { api } from '../../convex/_generated/api'
 import { ArtifactType } from '../../convex/builds'
+import modulesData from '../../convex/modules.json'
+import registryData from '../../registry/registry.json'
 import { TARGETS } from '../constants/targets'
 
 export default function BuildProgress() {
@@ -209,6 +211,24 @@ export default function BuildProgress() {
     return new Date(timestamp).toLocaleString()
   }
 
+  // Get excluded modules
+  const excludedModules = modulesData.modules.filter(
+    (module) => build.config.modulesExcluded[module.id] === true
+  )
+
+  // Get enabled plugins
+  const enabledPlugins = (build.config.pluginsEnabled || []).map((pluginId) => {
+    // Extract slug from "slug@version" format if present
+    const slug = pluginId.includes('@') ? pluginId.split('@')[0] : pluginId
+    const pluginData = (registryData as Record<string, { name: string; description: string; version: string }>)[slug]
+    return {
+      id: slug,
+      name: pluginData?.name || slug,
+      description: pluginData?.description || '',
+      version: pluginId.includes('@') ? pluginId.split('@')[1] : pluginData?.version || '',
+    }
+  })
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -381,6 +401,68 @@ export default function BuildProgress() {
                 <span className="text-green-400 font-medium"> success</span>,
                 your firmware artifact will be ready to download.
               </p>
+            </div>
+          )}
+
+          {/* Build Configuration Summary */}
+          {(excludedModules.length > 0 || enabledPlugins.length > 0) && (
+            <div className="space-y-6 border-t border-slate-800 pt-6">
+              {/* Excluded Modules */}
+              {excludedModules.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Excluded Modules</h3>
+                  <div className="bg-slate-900/50 rounded-lg border border-slate-800 p-6">
+                    <div className="space-y-4">
+                      {excludedModules.map((module) => (
+                        <div
+                          key={module.id}
+                          className="border-b border-slate-800 pb-4 last:border-b-0 last:pb-0"
+                        >
+                          <h4 className="text-base font-medium mb-1">
+                            {module.name}
+                          </h4>
+                          <p className="text-slate-400 text-sm">
+                            {module.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Enabled Plugins */}
+              {enabledPlugins.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Enabled Plugins</h3>
+                  <div className="bg-slate-900/50 rounded-lg border border-slate-800 p-6">
+                    <div className="space-y-4">
+                      {enabledPlugins.map((plugin) => (
+                        <div
+                          key={plugin.id}
+                          className="border-b border-slate-800 pb-4 last:border-b-0 last:pb-0"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-base font-medium">
+                              {plugin.name}
+                            </h4>
+                            {plugin.version && (
+                              <span className="text-xs text-slate-500">
+                                v{plugin.version}
+                              </span>
+                            )}
+                          </div>
+                          {plugin.description && (
+                            <p className="text-slate-400 text-sm">
+                              {plugin.description}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
