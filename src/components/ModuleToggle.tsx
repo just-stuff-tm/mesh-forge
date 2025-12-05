@@ -26,6 +26,7 @@ export function ModuleToggle({
           onCheckedChange={onToggle}
           labelLeft="Default"
           labelRight="Excluded"
+          className={isExcluded ? 'bg-orange-600' : 'bg-slate-600'}
         />
       </div>
     </div>
