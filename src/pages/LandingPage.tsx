@@ -29,12 +29,12 @@ export default function LandingPage() {
         <div className="text-center py-20 px-8">
           <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-[1.1]">
             <span className="bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent inline-block pb-2">
-              Build firmware right from your bench
+              Extend Meshtastic beyond the core
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto mb-10">
-            Craft custom Meshtastic firmware in the cloud, flash from your
-            browser, and share your builds with the community.
+          <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-10">
+            Build custom firmware with third-party plugins: BBS's, custom hardware,
+            games, and more. An open ecosystem growing to hundreds of plugins.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
