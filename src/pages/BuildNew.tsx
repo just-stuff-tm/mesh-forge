@@ -10,6 +10,7 @@ import {
   getDependedPlugins,
   getImplicitDependencies,
   isRequiredByOther,
+  isPluginCompatibleWithTarget,
 } from '@/lib/utils'
 import { api } from '../../convex/_generated/api'
 import modulesData from '../../convex/modules.json'
@@ -554,7 +555,7 @@ export default function BuildNew() {
                     Reset plugins
                   </button>
                 </div>
-                <div className="grid gap-2 md:grid-cols-2">
+                <div className="grid gap-2 md:grid-cols-2" key={`plugins-${selectedTarget}`}>
                   {(() => {
                     // Get explicitly selected plugins (user-selected)
                     const explicitPlugins = Object.keys(pluginConfig).filter(
@@ -606,9 +607,29 @@ export default function BuildNew() {
                         const isImplicit =
                           implicitDeps.has(slug) ||
                           (explicitPlugins.includes(slug) && isRequired)
+                        
+                        // Check plugin compatibility with selected target
+                        const pluginIncludes = (plugin as { includes?: string[] }).includes
+                        const pluginExcludes = (plugin as { excludes?: string[] }).excludes
+                        // Legacy support: check for old "architectures" field
+                        const legacyArchitectures = (plugin as { architectures?: string[] }).architectures
+                        const hasCompatibilityConstraints = 
+                          (pluginIncludes && pluginIncludes.length > 0) || 
+                          (pluginExcludes && pluginExcludes.length > 0) ||
+                          (legacyArchitectures && legacyArchitectures.length > 0)
+                        const isCompatible = hasCompatibilityConstraints && selectedTarget
+                          ? isPluginCompatibleWithTarget(
+                              pluginIncludes || legacyArchitectures,
+                              pluginExcludes,
+                              selectedTarget
+                            )
+                          : true // If no constraints or no target selected, assume compatible
+                        // Mark as incompatible if plugin has compatibility constraints and target is not compatible
+                        const isIncompatible = !isCompatible && hasCompatibilityConstraints && !!selectedTarget
+                        
                         return (
                           <PluginToggle
-                            key={slug}
+                            key={`${slug}-${selectedTarget}`}
                             id={slug}
                             name={plugin.name}
                             description={plugin.description}
@@ -616,8 +637,13 @@ export default function BuildNew() {
                             onToggle={(enabled) =>
                               handleTogglePlugin(slug, enabled)
                             }
-                            disabled={isImplicit}
+                            disabled={isImplicit || isIncompatible}
                             enabledLabel={isImplicit ? 'Required' : 'Add'}
+                            incompatibleReason={
+                              isIncompatible
+                                ? 'Not compatible with this target'
+                                : undefined
+                            }
                             featured={plugin.featured ?? false}
                             flashCount={pluginFlashCounts[slug] ?? 0}
                             homepage={plugin.homepage}

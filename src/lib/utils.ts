@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import PARENT_MAP from '../constants/architecture-hierarchy.json'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -124,4 +125,170 @@ export function isRequiredByOther(
   }
   
   return false
+}
+
+/**
+ * Normalize architecture name (remove hyphens and underscores to match PlatformIO format)
+ * PlatformIO uses "esp32s3", "nrf52840" (no hyphens, no underscores)
+ * Hardware list uses "esp32-s3" (with hyphens)
+ * Some sources might use "esp32_s3" (with underscores)
+ */
+function normalizeArchitecture(arch: string): string {
+  return arch.replace(/[-_]/g, '')
+}
+
+/**
+ * Trace a target/variant/architecture back to its base architecture
+ * Follows the parent chain until it reaches a base architecture (null parent)
+ */
+export function getBaseArchitecture(name: string): string | null {
+  const normalized = normalizeArchitecture(name)
+  const parentMap = PARENT_MAP as Record<string, string | null>
+  
+  const visited = new Set<string>()
+  let current = normalized
+  
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    const parent = parentMap[current]
+    
+    // If parent is null, we've reached a base architecture
+    if (parent === null) {
+      return current
+    }
+    
+    // If no parent found, return current (might be unknown)
+    if (parent === undefined) {
+      return current
+    }
+    
+    current = normalizeArchitecture(parent)
+  }
+  
+  // Circular reference or unknown, return the last known
+  return current || normalized
+}
+
+/**
+ * Get all compatible architectures for a given architecture
+ * (including itself and all parent architectures up to base)
+ */
+export function getCompatibleArchitectures(arch: string): string[] {
+  const normalized = normalizeArchitecture(arch)
+  const parentMap = PARENT_MAP as Record<string, string | null>
+  
+  const compatible = [normalized]
+  const visited = new Set<string>()
+  let current = normalized
+  
+  // Follow parent chain up to base architecture
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    const parent = parentMap[current]
+    
+    if (parent === null) {
+      // Reached base architecture
+      break
+    }
+    
+    if (parent === undefined) {
+      // Unknown, stop here
+      break
+    }
+    
+    const normalizedParent = normalizeArchitecture(parent)
+    if (!compatible.includes(normalizedParent)) {
+      compatible.push(normalizedParent)
+    }
+    
+    current = normalizedParent
+  }
+  
+  return compatible
+}
+
+/**
+ * Check if a plugin is compatible with a target
+ * Plugin can specify includes/excludes arrays with targets, variant bases, or architectures
+ * 
+ * @param pluginIncludes - Array of architectures/targets the plugin explicitly supports
+ * @param pluginExcludes - Array of architectures/targets the plugin explicitly doesn't support
+ * @param targetName - The target name to check compatibility against
+ */
+export function isPluginCompatibleWithTarget(
+  pluginIncludes: string[] | undefined,
+  pluginExcludes: string[] | undefined,
+  targetName: string | undefined
+): boolean {
+  // If target not specified, can't determine compatibility
+  if (!targetName) {
+    return true // Default to compatible if unknown
+  }
+
+  const parentMap = PARENT_MAP as Record<string, string | null>
+  
+  // Normalize target name first (all keys in parentMap are normalized)
+  const normalizedTarget = normalizeArchitecture(targetName)
+  
+  // Get all compatible names for the target (target itself + all parents up to base architecture)
+  const compatibleNames = new Set<string>([normalizedTarget])
+  const visited = new Set<string>()
+  let current = normalizedTarget
+  
+  // Follow parent chain (all keys and values in parentMap are already normalized)
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    const parent = parentMap[current]
+    
+    if (parent === null) {
+      // Reached base architecture
+      compatibleNames.add(current) // Add the base architecture itself
+      break
+    }
+    
+    if (parent === undefined) {
+      // Unknown, stop here
+      break
+    }
+    
+    // Parent is already normalized (from JSON)
+    compatibleNames.add(parent)
+    current = parent
+  }
+  
+  // Check excludes first - if target matches any exclude, it's incompatible
+  // compatibleNames are already normalized, normalize excludes for comparison
+  if (pluginExcludes && pluginExcludes.length > 0) {
+    const isExcluded = pluginExcludes.some((exclude) => {
+      const normalizedExclude = normalizeArchitecture(exclude)
+      return compatibleNames.has(normalizedExclude)
+    })
+    if (isExcluded) {
+      return false
+    }
+  }
+  
+  // If includes are specified, target must match at least one include
+  // compatibleNames are already normalized, normalize includes for comparison
+  if (pluginIncludes && pluginIncludes.length > 0) {
+    return pluginIncludes.some((include) => {
+      const normalizedInclude = normalizeArchitecture(include)
+      return compatibleNames.has(normalizedInclude)
+    })
+  }
+  
+  // If no includes/excludes specified, assume compatible with all (backward compatible)
+  return true
+}
+
+/**
+ * Check if a plugin is compatible with a target architecture
+ * @deprecated Use isPluginCompatibleWithTarget instead
+ */
+export function isPluginCompatibleWithArchitecture(
+  pluginArchitectures: string[] | undefined,
+  targetArchitecture: string | undefined
+): boolean {
+  // Legacy support: treat architectures array as includes
+  return isPluginCompatibleWithTarget(pluginArchitectures, undefined, targetArchitecture)
 }

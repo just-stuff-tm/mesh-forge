@@ -13,6 +13,7 @@ interface PluginToggleProps {
   version?: string
   disabled?: boolean
   enabledLabel?: string
+  incompatibleReason?: string
 }
 
 export function PluginToggle({
@@ -26,9 +27,18 @@ export function PluginToggle({
   version,
   disabled = false,
   enabledLabel = 'Add',
+  incompatibleReason,
 }: PluginToggleProps) {
+  const isIncompatible = !!incompatibleReason
+  
   return (
-    <div className="relative flex items-start gap-4 p-4 rounded-lg border-2 border-slate-700 bg-slate-900/50 hover:border-slate-600 transition-colors">
+    <div
+      className={`relative flex items-start gap-4 p-4 rounded-lg border-2 transition-colors ${
+        isIncompatible
+          ? 'border-slate-800 bg-slate-900/30 opacity-60 cursor-not-allowed'
+          : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
+      }`}
+    >
       {/* Flash count and homepage links in lower right */}
       <div className="absolute bottom-2 right-2 flex items-center gap-3 text-xs text-slate-400 z-10">
         {version && <span className="text-slate-500">v{version}</span>}
@@ -61,12 +71,21 @@ export function PluginToggle({
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-1">
-          <h4 className="font-semibold text-sm">{name}</h4>
+          <h4 className={`font-semibold text-sm ${isIncompatible ? 'text-slate-500' : ''}`}>
+            {name}
+          </h4>
           {featured && (
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
           )}
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
+        <p className={`text-xs leading-relaxed ${isIncompatible ? 'text-slate-500' : 'text-slate-400'}`}>
+          {description}
+        </p>
+        {isIncompatible && incompatibleReason && (
+          <p className="text-xs text-red-400 mt-1 font-medium">
+            {incompatibleReason}
+          </p>
+        )}
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
         <Switch
