@@ -19,6 +19,7 @@
     "homepage": "https://github.com/MeshEnvy/lobbs",
     "version": "1.0.0",
     "featured": true,
+    "includes": ["esp32"],
     "dependencies": {
       "lodb": ">=1.0.0",
       "meshtastic": ">=2.7.0"
