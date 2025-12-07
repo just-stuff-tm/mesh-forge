@@ -17,3 +17,6 @@
 [submodule "vendor/lodb"]
 	path = vendor/lodb
 	url = git@github.com:MeshEnvy/lodb.git
+[submodule "vendor/meshcore"]
+	path = vendor/meshcore
+	url = git@github.com:MeshEnvy/MeshCore.git
