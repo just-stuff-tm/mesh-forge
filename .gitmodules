@@ -20,3 +20,6 @@
 [submodule "vendor/meshcore"]
 	path = vendor/meshcore
 	url = git@github.com:MeshEnvy/MeshCore.git
+[submodule "vendor/meshscript"]
+	path = vendor/meshscript
+	url = git@github.com:MeshEnvy/meshscript.git
