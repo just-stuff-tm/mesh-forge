@@ -23,7 +23,7 @@
     "featured": true,
     "includes": ["esp32"],
     "dependencies": {
-      "lodb": ">=1.1.0",
+      "lodb": ">=1.2.0",
       "meshtastic": ">=2.7.0"
     }
   }
