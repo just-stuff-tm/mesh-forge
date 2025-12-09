@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+when making changes to a module that has a changelog, add the appropriate unreleased change log entry
+
+when preparing an MPM plugin release, don't forget to update @public/registry.json
