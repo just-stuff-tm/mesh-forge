@@ -19,7 +19,7 @@
     "imageUrl": "https://raw.githubusercontent.com/MeshEnvy/lobbs/refs/heads/main/logo.webp",
     "repo": "https://github.com/MeshEnvy/lobbs",
     "homepage": "https://github.com/MeshEnvy/lobbs",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "featured": true,
     "includes": ["esp32"],
     "dependencies": {
