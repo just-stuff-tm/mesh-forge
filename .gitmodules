@@ -26,3 +26,9 @@
 [submodule "vendor/meshcore-flasher"]
 	path = vendor/meshcore-flasher
 	url = git@github.com:meshcore-dev/flasher.meshcore.dev.git
+[submodule "vendor/lofs"]
+	path = vendor/lofs
+	url = git@github.com:MeshEnvy/lofs.git
+[submodule "vendor/lofs-test"]
+	path = vendor/lofs-test
+	url = git@github.com:MeshEnvy/lofs-test.git

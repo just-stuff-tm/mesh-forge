@@ -11,5 +11,8 @@ export default {
     "Build custom firmware with third-party plugins: BBS's, custom hardware, games, and more. An open ecosystem growing to hundreds of plugins.",
 
   extends: [vikeReact],
-  prerender: true,
+  prerender: {
+    partial: true,
+  },
+  ssr: false,
 } satisfies Config
