@@ -12,9 +12,10 @@ interface BuildDownloadButtonProps {
   type: ArtifactType
   variant?: "default" | "outline"
   className?: string
+  compact?: boolean
 }
 
-export function BuildDownloadButton({ build, type, variant, className }: BuildDownloadButtonProps) {
+export function BuildDownloadButton({ build, type, variant, className, compact = false }: BuildDownloadButtonProps) {
   const generateDownloadUrl = useMutation(api.builds.generateDownloadUrl)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,11 +51,54 @@ export function BuildDownloadButton({ build, type, variant, className }: BuildDo
 
   if (type === ArtifactType.Firmware && !build.buildHash) return null
 
+  const buttonElement = (
+    <Button onClick={handleDownload} disabled={isLoading} variant={defaultVariant} className={defaultClassName}>
+      {type === ArtifactType.Firmware && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          className="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+        >
+          <rect width="3" height="4.5" x="3.25" y="1.75" />
+          <path d="m9.75 6.25h3m-3-4.5h1.5v4" />
+          <rect width="3" height="4.5" x="9.75" y="9.75" />
+          <path d="m3.25 14.25h3m-3-4.5h1.5v4" />
+        </svg>
+      )}
+      {type === ArtifactType.Source && (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          className="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        >
+          <path d="M9.5 5H9a2 2 0 0 0-2 2v2c0 1-.6 3-3 3c1 0 3 .6 3 3v2a2 2 0 0 0 2 2h.5m5-14h.5a2 2 0 0 1 2 2v2c0 1 .6 3 3 3c-1 0-3 .6-3 3v2a2 2 0 0 1-2 2h-.5" />
+        </svg>
+      )}
+      Download {type === ArtifactType.Firmware ? "firmware" : "source"}
+    </Button>
+  )
+
+  if (compact) {
+    return buttonElement
+  }
+
   const button = (
     <div className="space-y-2">
-      <Button onClick={handleDownload} disabled={isLoading} variant={defaultVariant} className={defaultClassName}>
-        Download {type === ArtifactType.Firmware ? "firmware" : "source"}
-      </Button>
+      {buttonElement}
       {type === ArtifactType.Firmware && (
         <p className="text-xs text-slate-400 text-center">
           Need help flashing?{" "}

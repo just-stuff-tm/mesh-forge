@@ -50,7 +50,11 @@ export const userSettingsFields = {
 export const schema = defineSchema({
   ...authTables,
   profiles: defineTable(profileFields).index("by_userId", ["userId"]).index("by_isPublic", ["isPublic"]),
-  builds: defineTable(buildFields).index("by_buildHash", ["buildHash"]).index("by_status", ["status"]),
+  builds: defineTable(buildFields)
+    .index("by_buildHash", ["buildHash"])
+    .index("by_status", ["status"])
+    .index("by_updatedAt", ["updatedAt"])
+    .index("by_status_updatedAt", ["status", "updatedAt"]),
   plugins: defineTable(pluginFields).index("by_slug", ["slug"]),
   userSettings: defineTable(userSettingsFields).index("by_user", ["userId"]),
 })

@@ -2,8 +2,27 @@ import { DiscordButton } from "@/components/DiscordButton"
 import { PluginCard } from "@/components/PluginCard"
 import { RedditButton } from "@/components/RedditButton"
 import { Button } from "@/components/ui/button"
+import { api } from "@/convex/_generated/api"
 import registryData from "@/public/registry.json"
+import { useQuery } from "convex/react"
+import { useEffect, useState } from "react"
 import { navigate } from "vike/client/router"
+
+function getGitHubOwnerRepo(repoUrl?: string): { owner: string; repo: string } | null {
+  if (!repoUrl) return null
+  try {
+    const url = new URL(repoUrl)
+    if (url.hostname === "github.com" || url.hostname === "www.github.com") {
+      const pathParts = url.pathname.split("/").filter(Boolean)
+      if (pathParts.length >= 2) {
+        return { owner: pathParts[0], repo: pathParts[1] }
+      }
+    }
+  } catch {
+    // Invalid URL
+  }
+  return null
+}
 
 function QuickBuildIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -43,9 +62,40 @@ function DocsIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export default function LandingPage() {
+  const flashCounts = useQuery(api.plugins.getAll)
+  const [githubStars, setGithubStars] = useState<Record<string, number>>({})
+
   const featuredPlugins = Object.entries(registryData)
     .filter(([, plugin]) => plugin.featured === true)
     .sort(([, pluginA], [, pluginB]) => pluginA.name.localeCompare(pluginB.name))
+
+  useEffect(() => {
+    // Fetch GitHub stars for featured plugins
+    const fetchStars = async () => {
+      const stars: Record<string, number> = {}
+      const promises = featuredPlugins.map(async ([slug, plugin]) => {
+        const ownerRepo = getGitHubOwnerRepo(plugin.repo)
+        if (!ownerRepo) return
+
+        try {
+          const res = await fetch(`https://api.github.com/repos/${ownerRepo.owner}/${ownerRepo.repo}`)
+          const data = await res.json()
+          if (data.stargazers_count !== undefined) {
+            stars[slug] = data.stargazers_count
+          }
+        } catch {
+          // Silently fail if GitHub API is unavailable
+        }
+      })
+
+      await Promise.all(promises)
+      setGithubStars(stars)
+    }
+
+    if (featuredPlugins.length > 0) {
+      fetchStars()
+    }
+  }, [featuredPlugins.length])
 
   const customBuildPlugin = {
     id: "custom-build",
@@ -73,7 +123,7 @@ export default function LandingPage() {
             <div className="mb-10">
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 pb-24 md:pb-8 max-w-6xl mx-auto relative">
                 <h2 className="text-2xl font-bold mb-6 text-center">Popular Builds</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(260px,260px))] gap-4 auto-rows-fr justify-center">
+                <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(312px,312px))] gap-4 auto-rows-fr justify-center">
                   {featuredPlugins.map(([slug, plugin]) => (
                     <div key={slug} className="h-full">
                       <PluginCard
@@ -86,8 +136,8 @@ export default function LandingPage() {
                         repo={plugin.repo}
                         homepage={plugin.homepage}
                         version={plugin.version}
-                        downloads={plugin.downloads}
-                        stars={plugin.stars}
+                        downloads={flashCounts?.[slug]}
+                        stars={githubStars[slug]}
                       />
                     </div>
                   ))}

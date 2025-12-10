@@ -251,7 +251,7 @@ export function PluginCard(props: PluginCardProps) {
                   e.stopPropagation()
                   navigate(`/builds/new?plugin=${id}`)
                 }}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors cursor-pointer"
               >
                 <Zap className="w-3 h-3" />
                 Build Now

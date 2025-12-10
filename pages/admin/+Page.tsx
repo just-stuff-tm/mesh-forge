@@ -1,17 +1,30 @@
-import { BuildDownloadButton } from "@/components/BuildDownloadButton"
+import { BuildProgress } from "@/components/BuildProgress"
 import { Button } from "@/components/ui/button"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
-import { ArtifactType } from "@/convex/builds"
 import { useMutation, useQuery } from "convex/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { navigate } from "vike/client/router"
 
 type FilterType = "all" | "failed"
 
+const FILTER_STORAGE_KEY = "admin-build-filter"
+
 export default function Admin() {
-  const [filter, setFilter] = useState<FilterType>("failed")
+  const [filter, setFilter] = useState<FilterType>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(FILTER_STORAGE_KEY)
+      if (saved === "all" || saved === "failed") {
+        return saved
+      }
+    }
+    return "failed"
+  })
+
+  useEffect(() => {
+    localStorage.setItem(FILTER_STORAGE_KEY, filter)
+  }, [filter])
   const isAdmin = useQuery(api.admin.isAdmin)
   const failedBuilds = useQuery(api.admin.listFailedBuilds)
   const allBuilds = useQuery(api.admin.listAllBuilds)
@@ -51,33 +64,8 @@ export default function Admin() {
       toast.error("Failed to retry build", {
         description: String(error),
       })
+      throw error
     }
-  }
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString()
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      success: {
-        bg: "bg-green-500/20",
-        text: "text-green-400",
-        label: "Success",
-      },
-      failure: { bg: "bg-red-500/20", text: "text-red-400", label: "Failed" },
-      queued: {
-        bg: "bg-yellow-500/20",
-        text: "text-yellow-400",
-        label: "Queued",
-      },
-    }
-    const config = statusConfig[status as keyof typeof statusConfig] || {
-      bg: "bg-slate-500/20",
-      text: "text-slate-400",
-      label: status,
-    }
-    return <span className={`px-2 py-1 ${config.bg} ${config.text} rounded text-sm`}>{config.label}</span>
   }
 
   return (
@@ -113,106 +101,8 @@ export default function Admin() {
         ) : (
           <div className="space-y-4">
             {builds.map(build => (
-              <div key={build._id} className="bg-slate-900 border border-slate-800 rounded-lg p-6">
-                {/* Header Section */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-800">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl font-mono font-semibold text-white">
-                      {build.buildHash.substring(0, 8)}
-                    </span>
-                    {getStatusBadge(build.status)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => navigate(`/builds/${build.buildHash}`)}
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-600 hover:bg-slate-800"
-                    >
-                      Public View
-                    </Button>
-                    <Button
-                      onClick={() => navigate(`/builds/new/${build.buildHash}`)}
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-600 hover:bg-slate-800"
-                    >
-                      Clone
-                    </Button>
-                    <Button onClick={() => handleRetry(build._id)} className="bg-cyan-600 hover:bg-cyan-700" size="sm">
-                      Re-run Build
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Build Configuration Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm text-slate-500">Target</span>
-                      <div className="text-sm font-mono text-white mt-1">{build.config.target}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-slate-500">Version</span>
-                      <div className="text-sm font-mono text-white mt-1">{build.config.version}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm text-slate-500">{build.completedAt ? "Completed" : "Started"}</span>
-                      <div className="text-sm text-white mt-1">
-                        {build.completedAt
-                          ? formatDate(build.completedAt)
-                          : build.startedAt
-                            ? formatDate(build.startedAt)
-                            : "Unknown"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Run History Section */}
-                {(build.githubRunId || (build.githubRunIdHistory?.length ?? 0) > 0) && (
-                  <div className="mb-4 pb-4 border-b border-slate-800">
-                    <span className="text-xs text-slate-500 mb-2 block">
-                      Run History
-                      {(build.githubRunIdHistory?.length ?? 0) > 0 &&
-                        ` (${(build.githubRunIdHistory?.length ?? 0) + (build.githubRunId ? 1 : 0)} total)`}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {build.githubRunId && (
-                        <a
-                          href={`https://github.com/MeshEnvy/mesh-forge/actions/runs/${build.githubRunId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-cyan-400 hover:text-cyan-300 underline font-semibold"
-                          title="Current run"
-                        >
-                          {build.githubRunId}
-                        </a>
-                      )}
-                      {build.githubRunIdHistory?.map(id => (
-                        <a
-                          key={id}
-                          href={`https://github.com/MeshEnvy/mesh-forge/actions/runs/${id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-cyan-400 hover:text-cyan-300 underline"
-                        >
-                          {id}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Download Actions */}
-                {build.buildHash && (
-                  <div className="flex gap-3">
-                    {build.status === "success" && <BuildDownloadButton build={build} type={ArtifactType.Firmware} />}
-                    <BuildDownloadButton build={build} type={ArtifactType.Source} />
-                  </div>
-                )}
+              <div key={build._id} className="space-y-4">
+                <BuildProgress build={build} isAdmin={true} onRetry={handleRetry} />
               </div>
             ))}
           </div>

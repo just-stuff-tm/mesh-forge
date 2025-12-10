@@ -3,6 +3,7 @@ import { v } from "convex/values"
 import { api, internal } from "./_generated/api"
 import type { Doc, Id } from "./_generated/dataModel"
 import { internalMutation, mutation, query } from "./_generated/server"
+import { getArtifactFilenameBase } from "./lib/filename"
 import { generateSignedDownloadUrl } from "./lib/r2"
 import { buildFields } from "./schema"
 
@@ -14,6 +15,7 @@ export enum ArtifactType {
 type BuildUpdateData = {
   status: string
   completedAt?: number
+  updatedAt?: number
 }
 
 export const get = query({
@@ -269,6 +271,7 @@ export const updateBuildStatus = internalMutation({
       sourcePath?: string
     } = {
       status: args.status,
+      updatedAt: Date.now(),
     }
 
     // Only set completedAt for final statuses
@@ -374,17 +377,23 @@ export const generateDownloadUrl = mutation({
       })
     }
 
-    const last4Hash = build.buildHash.slice(-4)
-    const os = "meshtastic" // OS/platform identifier
-    const version = build.config.version
-    const target = build.config.target
-    const jobId = build.githubRunId
+    // Generate base filename using shared utility function
+    const filenameBase = getArtifactFilenameBase(
+      build.config.version,
+      build.config.target,
+      build.buildHash,
+      build.githubRunId,
+      artifactTypeStr as "source" | "firmware"
+    )
 
+    // Add profile slug if present (inserted between version and target)
     // Format: {os}-{version}-{profileSlug}-{target}-{last4hash}-{jobId}-{assetType}.tar.gz
-    // If no profile, omit profileSlug and its trailing dash
     const filename = profileSlug
-      ? `${os}-${version}-${profileSlug}-${target}-${last4Hash}-${jobId}-${artifactTypeStr}.tar.gz`
-      : `${os}-${version}-${target}-${last4Hash}-${jobId}-${artifactTypeStr}.tar.gz`
+      ? filenameBase.replace(
+          `meshtastic-${build.config.version}-`,
+          `meshtastic-${build.config.version}-${profileSlug}-`
+        ) + ".tar.gz"
+      : filenameBase + ".tar.gz"
 
     return await generateSignedDownloadUrl(objectKey, filename, contentType)
   },
