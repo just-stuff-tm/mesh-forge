@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-10
+
 ### Minor
 
 - Added footer with links to legal pages (License, Privacy Policy, Terms of Service)
 - Added licensing notice page explaining GPLv3 licensing for generated projects
 - Added privacy policy page detailing data collection and usage
 - Added terms of service page with usage terms and disclaimers
+
+### Patch
+
+- Fix prerendering on dynamic routes
 
 ## [0.2.0] - 2025-12-10
 
@@ -29,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/MeshEnvy/mesh-forge/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MeshEnvy/mesh-forge/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/MeshEnvy/mesh-forge/releases/tag/v0.3.0
 [0.2.0]: https://github.com/MeshEnvy/mesh-forge/releases/tag/v0.2.0
 [0.1.0]: https://github.com/MeshEnvy/mesh-forge/releases/tag/v0.1.0
