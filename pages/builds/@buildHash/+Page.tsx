@@ -1,4 +1,5 @@
 import { BuildProgress } from "@/components/BuildProgress"
+import { GiscusComments } from "@/components/GiscusComments"
 import { api } from "@/convex/_generated/api"
 import { useMutation, useQuery } from "convex/react"
 import { Loader2 } from "lucide-react"
@@ -68,6 +69,7 @@ export default function BuildProgressPage() {
     <div className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <BuildProgress build={build} isAdmin={isAdmin === true} onRetry={handleRetry} />
+        <GiscusComments build={build} />
       </div>
     </div>
   )

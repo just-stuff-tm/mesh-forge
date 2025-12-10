@@ -7,7 +7,7 @@ import { getArtifactFilenameBase } from "@/convex/lib/filename"
 import modulesData from "@/convex/modules.json"
 import { getImplicitDependencies, humanizeStatus } from "@/lib/utils"
 import registryData from "@/public/registry.json"
-import { AlertCircle, CheckCircle, Copy, Loader2, Share2, X, XCircle } from "lucide-react"
+import { CheckCircle, Copy, Loader2, Share2, X, XCircle } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { navigate } from "vike/client/router"
@@ -139,60 +139,6 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
       .join(" ")
   }
 
-  // Generate GitHub discussion URL with prefilled body
-  const generateDiscussionUrl = (): string => {
-    const flags = computeFlagsFromConfig(build.config)
-    const plugins = build.config.pluginsEnabled?.join(", ") || "(none)"
-    const timestamp = new Date(build.startedAt).toISOString()
-    const githubRunLink = githubActionUrl ? `[View run](${githubActionUrl})` : "(not available)"
-    const buildPageUrl = `${window.location.origin}/builds/${build.buildHash}`
-
-    // Format plugins as +plugin@version
-    const formattedPlugins =
-      build.config.pluginsEnabled
-        ?.map(plugin => {
-          // Plugin might be "slug@version" or just "slug"
-          return plugin.includes("@") ? `+${plugin}` : `+${plugin}`
-        })
-        .join(" ") || ""
-
-    const bracketContent = [
-      build.config.target,
-      `v${build.config.version}`,
-      ...(formattedPlugins ? [formattedPlugins] : []),
-    ].join(" ")
-
-    const discussionTitle = `Build ${build.status === "failure" ? "Failed" : "Issue"}: ${targetLabel} [${bracketContent}]`
-
-    const discussionBody = `## Build ${build.status === "failure" ? "Failed" : "Information"}
-
-**Build Hash**: \`${build.buildHash}\`
-**Target Board**: ${build.config.target}
-**Firmware Version**: ${build.config.version}
-**Build Flags**: ${flags || "(none)"}
-**Plugins**: ${plugins}
-**Build Timestamp**: ${timestamp}
-
-**Build Page**: [View build page](${buildPageUrl})
-**GitHub Run**: ${githubRunLink}
-
-## Additional Information
-(Please add any additional details about the issue here)`
-
-    const baseUrl = "https://github.com/MeshEnvy/mesh-forge/discussions/new"
-    const params = new URLSearchParams({
-      category: "q-a",
-      title: discussionTitle,
-      body: discussionBody,
-    })
-
-    return `${baseUrl}?${params.toString()}`
-  }
-
-  const handleReportIssue = () => {
-    window.open(generateDiscussionUrl(), "_blank", "noopener,noreferrer")
-  }
-
   const handleRetry = async () => {
     if (!build?._id || !onRetry) return
     try {
@@ -311,10 +257,6 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
             </div>
             {showActions && (
               <div className="flex gap-2">
-                <Button onClick={handleReportIssue} variant="outline" className="border-slate-600 hover:bg-slate-800">
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Support
-                </Button>
                 <Button
                   onClick={() => navigate(`/builds/new/${build.buildHash}`)}
                   variant="outline"

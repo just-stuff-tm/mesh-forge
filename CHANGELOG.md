@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Minor
+
+- Integrated Giscus comments into build pages for discussion threads per build configuration
+
 ### Patch
 
 - Made build hash label clickable in BuildProgress component to navigate to build detail page
