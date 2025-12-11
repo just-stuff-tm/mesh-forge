@@ -1,13 +1,3 @@
-[submodule "vendor/web-flasher"]
-	path = vendor/web-flasher
-	url = https://github.com/meshtastic/web-flasher
-[submodule "vendor/firmware"]
-	path = vendor/firmware
-	url = https://github.com/MeshEnvy/firmware.git
-	branch = meshenvy/module-registry
-[submodule "vendor/api"]
-	path = vendor/api
-	url = https://github.com/meshtastic/api.git
 [submodule "vendor/mpm"]
 	path = vendor/mpm
 	url = git@github.com:MeshEnvy/mpm.git
@@ -17,9 +7,6 @@
 [submodule "vendor/lodb"]
 	path = vendor/lodb
 	url = git@github.com:MeshEnvy/lodb.git
-[submodule "vendor/meshcore"]
-	path = vendor/meshcore
-	url = git@github.com:MeshEnvy/MeshCore.git
 [submodule "vendor/meshscript"]
 	path = vendor/meshscript
 	url = git@github.com:MeshEnvy/meshscript.git
