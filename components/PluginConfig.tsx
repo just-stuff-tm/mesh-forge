@@ -10,23 +10,27 @@ import { ChevronDown, ChevronRight } from "lucide-react"
 
 interface PluginConfigProps {
   pluginConfig: Record<string, boolean>
+  pluginOptionsConfig: Record<string, Record<string, boolean>>
   selectedTarget: string
   pluginParam?: string
   pluginFlashCounts: Record<string, number>
   showPlugins: boolean
   onToggleShow: () => void
   onTogglePlugin: (id: string, enabled: boolean) => void
+  onTogglePluginOption: (pluginId: string, optionKey: string, enabled: boolean) => void
   onReset: () => void
 }
 
 export function PluginConfig({
   pluginConfig,
+  pluginOptionsConfig,
   selectedTarget,
   pluginParam,
   pluginFlashCounts,
   showPlugins,
   onToggleShow,
   onTogglePlugin,
+  onTogglePluginOption,
   onReset,
 }: PluginConfigProps) {
   const pluginCount = Object.keys(pluginConfig).filter(id => pluginConfig[id] === true).length
@@ -86,13 +90,13 @@ export function PluginConfig({
             {Object.entries(registryData)
               .sort(([, pluginA], [, pluginB]) => {
                 // Featured plugins first
-                const featuredA = pluginA.featured ?? false
-                const featuredB = pluginB.featured ?? false
+                const featuredA = (pluginA as { featured?: boolean }).featured ?? false
+                const featuredB = (pluginB as { featured?: boolean }).featured ?? false
                 if (featuredA !== featuredB) {
                   return featuredA ? -1 : 1
                 }
                 // Then alphabetical by name
-                return pluginA.name.localeCompare(pluginB.name)
+                return (pluginA as { name: string }).name.localeCompare((pluginB as { name: string }).name)
               })
               .map(([slug, plugin]) => {
                 // Check if plugin is required by another explicitly selected plugin
@@ -129,6 +133,12 @@ export function PluginConfig({
                 // Check if this is the preselected plugin from URL
                 const isPreselected = pluginParam === slug
 
+                const pluginRegistry = plugin as {
+                  featured?: boolean
+                }
+                const isPluginEnabled = allEnabledPlugins.includes(slug)
+                const pluginOptions = pluginOptionsConfig[slug] ?? {}
+
                 return (
                   <PluginCard
                     key={`${slug}-${selectedTarget}`}
@@ -137,16 +147,24 @@ export function PluginConfig({
                     name={plugin.name}
                     description={plugin.description}
                     imageUrl={plugin.imageUrl}
-                    isEnabled={allEnabledPlugins.includes(slug)}
+                    isEnabled={isPluginEnabled}
                     onToggle={enabled => onTogglePlugin(slug, enabled)}
                     disabled={isImplicit || isIncompatible || isPreselected}
                     enabledLabel={isPreselected ? "Locked" : isImplicit ? "Required" : "Add"}
                     incompatibleReason={isIncompatible ? "Not compatible with this target" : undefined}
-                    featured={plugin.featured ?? false}
+                    featured={pluginRegistry.featured ?? false}
                     flashCount={pluginFlashCounts[slug] ?? 0}
                     homepage={plugin.homepage}
                     version={plugin.version}
                     repo={plugin.repo}
+                    diagnostics={
+                      isPluginEnabled
+                        ? {
+                            checked: pluginOptions.diagnostics ?? false,
+                            onCheckedChange: checked => onTogglePluginOption(slug, "diagnostics", checked === true),
+                          }
+                        : undefined
+                    }
                   />
                 )
               })}

@@ -15,6 +15,7 @@ import type * as builds from "../builds.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as lib_filename from "../lib/filename.js";
+import type * as lib_flags from "../lib/flags.js";
 import type * as lib_r2 from "../lib/r2.js";
 import type * as plugins from "../plugins.js";
 import type * as profiles from "../profiles.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   helpers: typeof helpers;
   http: typeof http;
   "lib/filename": typeof lib_filename;
+  "lib/flags": typeof lib_flags;
   "lib/r2": typeof lib_r2;
   plugins: typeof plugins;
   profiles: typeof profiles;

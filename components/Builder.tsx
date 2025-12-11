@@ -40,6 +40,7 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
   const [selectedVersion, setSelectedVersion] = useState<string>(VERSIONS[0])
   const [moduleConfig, setModuleConfig] = useState<Record<string, boolean>>({})
   const [pluginConfig, setPluginConfig] = useState<Record<string, boolean>>({})
+  const [pluginOptionsConfig, setPluginOptionsConfig] = useState<Record<string, Record<string, boolean>>>({})
   const [isFlashing, setIsFlashing] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [showModuleOverrides, setShowModuleOverrides] = useState(false)
@@ -48,6 +49,12 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
 
   // Get all enabled plugins
   const enabledPlugins = Object.keys(pluginConfig).filter(id => pluginConfig[id] === true)
+
+  // Compute all enabled plugins (explicit + implicit)
+  const allEnabledPlugins = getDependedPlugins(
+    enabledPlugins,
+    registryData as Record<string, { dependencies?: Record<string, string> }>
+  )
 
   // Calculate plugin compatibility
   const { compatibleTargets, filteredGroupedTargets, filteredTargetCategories } = usePluginCompatibility(
@@ -132,6 +139,10 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
       setPluginConfig(pluginObj)
       setShowPlugins(true)
     }
+
+    if (config.pluginConfigs) {
+      setPluginOptionsConfig(config.pluginConfigs)
+    }
   }, [cloneHash, sharedBuild, handleSelectTarget, setActiveCategory, TARGET_CATEGORIES])
 
   const selectedTargetLabel = (selectedTarget && TARGETS[selectedTarget]?.name) || selectedTarget
@@ -197,6 +208,27 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
     })
   }
 
+  const handleTogglePluginOption = (pluginId: string, optionKey: string, enabled: boolean) => {
+    setPluginOptionsConfig(prev => {
+      const next = { ...prev }
+      if (!next[pluginId]) {
+        next[pluginId] = {}
+      }
+      const pluginOptions = { ...next[pluginId] }
+      if (enabled) {
+        pluginOptions[optionKey] = true
+      } else {
+        delete pluginOptions[optionKey]
+      }
+      if (Object.keys(pluginOptions).length === 0) {
+        delete next[pluginId]
+      } else {
+        next[pluginId] = pluginOptions
+      }
+      return next
+    })
+  }
+
   const handleFlash = async () => {
     if (!selectedTarget) return
     setIsFlashing(true)
@@ -214,13 +246,27 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
         const plugin = (registryData as Record<string, { version: string }>)[slug]
         return `${slug}@${plugin.version}`
       })
+
+      // Filter plugin config to only include enabled plugins
+      const filteredPluginConfig = Object.keys(pluginOptionsConfig).reduce(
+        (acc, pluginId) => {
+          if (allEnabledPlugins.includes(pluginId)) {
+            acc[pluginId] = pluginOptionsConfig[pluginId]
+          }
+          return acc
+        },
+        {} as Record<string, Record<string, boolean>>
+      )
+
       const result = await ensureBuildFromConfig({
         target: selectedTarget,
         version: selectedVersion,
         modulesExcluded: moduleConfig,
         pluginsEnabled: pluginsEnabled.length > 0 ? pluginsEnabled : undefined,
+        pluginConfigs: Object.keys(filteredPluginConfig).length > 0 ? filteredPluginConfig : undefined,
+        registryData: registryData,
       })
-      navigate(`/builds?id=${result.buildHash}`)
+      navigate(`/builds?hash=${result.buildHash}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       setErrorMessage("Failed to start build. Please try again.")
@@ -273,13 +319,18 @@ export default function Builder({ cloneHash, pluginParam }: BuilderProps) {
 
           <PluginConfig
             pluginConfig={pluginConfig}
+            pluginOptionsConfig={pluginOptionsConfig}
             selectedTarget={selectedTarget}
             pluginParam={pluginParam}
             pluginFlashCounts={pluginFlashCounts}
             showPlugins={showPlugins}
             onToggleShow={() => setShowPlugins(prev => !prev)}
             onTogglePlugin={handleTogglePlugin}
-            onReset={() => setPluginConfig({})}
+            onTogglePluginOption={handleTogglePluginOption}
+            onReset={() => {
+              setPluginConfig({})
+              setPluginOptionsConfig({})
+            }}
           />
 
           <BuildActions

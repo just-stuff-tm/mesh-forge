@@ -1,3 +1,4 @@
+import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Download, Star, Zap } from "lucide-react"
 import { navigate } from "vike/client/router"
@@ -55,6 +56,10 @@ interface PluginCardLinkToggleProps extends PluginCardBaseProps {
   onToggle: (enabled: boolean) => void
   disabled?: boolean
   enabledLabel?: string
+  diagnostics?: {
+    checked: boolean
+    onCheckedChange: (checked: boolean) => void
+  }
 }
 
 type PluginCardProps = PluginCardToggleProps | PluginCardLinkProps | PluginCardLinkToggleProps
@@ -176,49 +181,35 @@ export function PluginCard(props: PluginCardProps) {
               {isIncompatible && incompatibleReason && (
                 <p className="text-xs text-red-400 mt-1 font-medium">{incompatibleReason}</p>
               )}
+              {/* Diagnostics checkbox - only show for link-toggle variant when enabled */}
+              {isLinkToggle && props.isEnabled && props.diagnostics && (
+                <div className="mt-2">
+                  <label className="flex items-start gap-2 cursor-pointer group" htmlFor={`${id}-diagnostics`}>
+                    <Checkbox
+                      id={`${id}-diagnostics`}
+                      checked={props.diagnostics.checked}
+                      onCheckedChange={props.diagnostics.onCheckedChange}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
+                        Include Diagnostics
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">Enable diagnostic logging for this plugin</div>
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Metadata row */}
-          <div className="flex items-center gap-3 flex-wrap text-xs text-slate-400">
-            {version && <span className="text-slate-500">v{version}</span>}
-            {isLinkToggle && flashCount !== undefined && (
-              <div className="flex items-center gap-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  className="text-slate-400"
-                  fill="currentColor"
-                  role="img"
-                  aria-label="Download"
-                >
-                  <path d="m14 2l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 18V9h-5V4H6v16zm-6-1l-4-4h2.5v-3h3v3H16z" />
-                </svg>
-                <span>{flashCount}</span>
-              </div>
-            )}
-            {isLink && downloads !== undefined && (
-              <div className="flex items-center gap-1">
-                <Download className="w-3.5 h-3.5" />
-                <span>{downloads.toLocaleString()}</span>
-              </div>
-            )}
-            {homepage &&
-              homepage !== repo &&
-              (isLink || isLinkToggle) &&
-              (isLink ? (
-                <button
-                  type="button"
-                  onClick={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    window.open(homepage, "_blank", "noopener,noreferrer")
-                  }}
-                  className="hover:opacity-80 transition-opacity"
-                  aria-label="Homepage"
-                >
+          {/* Footer with metadata and toggle */}
+          <div className="flex items-center justify-between gap-3 mt-auto pt-2 border-t border-slate-700/50">
+            {/* Metadata row */}
+            <div className="flex items-center gap-3 flex-wrap text-xs text-slate-400">
+              {version && <span className="text-slate-500">v{version}</span>}
+              {isLinkToggle && flashCount !== undefined && (
+                <div className="flex items-center gap-1">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -227,103 +218,131 @@ export function PluginCard(props: PluginCardProps) {
                     className="text-slate-400"
                     fill="currentColor"
                     role="img"
+                    aria-label="Download"
+                  >
+                    <path d="m14 2l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm4 18V9h-5V4H6v16zm-6-1l-4-4h2.5v-3h3v3H16z" />
+                  </svg>
+                  <span>{flashCount}</span>
+                </div>
+              )}
+              {isLink && downloads !== undefined && (
+                <div className="flex items-center gap-1">
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{downloads.toLocaleString()}</span>
+                </div>
+              )}
+              {homepage &&
+                homepage !== repo &&
+                (isLink || isLinkToggle) &&
+                (isLink ? (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      window.open(homepage, "_blank", "noopener,noreferrer")
+                    }}
+                    className="hover:opacity-80 transition-opacity"
                     aria-label="Homepage"
                   >
-                    <path
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      className="text-slate-400"
                       fill="currentColor"
-                      d="m12 3l11 8.25l-1.2 1.6L20 11.5V21H4v-9.5l-1.8 1.35l-1.2-1.6zm-4.65 9.05q0 1.325 1.425 2.825T12 18q1.8-1.625 3.225-3.125t1.425-2.825q0-1.1-.75-1.825T14.1 9.5q-.65 0-1.188.263T12 10.45q-.375-.425-.937-.687T9.9 9.5q-1.05 0-1.8.725t-.75 1.825"
-                    />
-                  </svg>
-                </button>
-              ) : (
-                <a
-                  href={homepage}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="hover:opacity-80 transition-opacity"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    className="text-slate-400"
-                    fill="currentColor"
-                    role="img"
-                    aria-label="Homepage"
+                      role="img"
+                      aria-label="Homepage"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="m12 3l11 8.25l-1.2 1.6L20 11.5V21H4v-9.5l-1.8 1.35l-1.2-1.6zm-4.65 9.05q0 1.325 1.425 2.825T12 18q1.8-1.625 3.225-3.125t1.425-2.825q0-1.1-.75-1.825T14.1 9.5q-.65 0-1.188.263T12 10.45q-.375-.425-.937-.687T9.9 9.5q-1.05 0-1.8.725t-.75 1.825"
+                      />
+                    </svg>
+                  </button>
+                ) : (
+                  <a
+                    href={homepage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="hover:opacity-80 transition-opacity"
                   >
-                    <path
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      className="text-slate-400"
                       fill="currentColor"
-                      d="m12 3l11 8.25l-1.2 1.6L20 11.5V21H4v-9.5l-1.8 1.35l-1.2-1.6zm-4.65 9.05q0 1.325 1.425 2.825T12 18q1.8-1.625 3.225-3.125t1.425-2.825q0-1.1-.75-1.825T14.1 9.5q-.65 0-1.188.263T12 10.45q-.375-.425-.937-.687T9.9 9.5q-1.05 0-1.8.725t-.75 1.825"
-                    />
-                  </svg>
-                </a>
-              ))}
-            {starsBadgeUrl &&
-              repo &&
-              (isLink ? (
-                <button
-                  type="button"
-                  onClick={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    window.open(repo, "_blank", "noopener,noreferrer")
-                  }}
-                  className="hover:opacity-80 transition-opacity"
-                  aria-label="GitHub repository"
-                >
-                  <img src={starsBadgeUrl} alt="GitHub stars" className="h-4" />
-                </button>
-              ) : (
-                <a
-                  href={repo}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="hover:opacity-80 transition-opacity"
-                >
-                  <img src={starsBadgeUrl} alt="GitHub stars" className="h-4" />
-                </a>
-              ))}
-          </div>
-          {/* Build Now button - absolutely positioned in lower right */}
-          {isLink && (
-            <div className="absolute bottom-4 right-4 z-10">
+                      role="img"
+                      aria-label="Homepage"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="m12 3l11 8.25l-1.2 1.6L20 11.5V21H4v-9.5l-1.8 1.35l-1.2-1.6zm-4.65 9.05q0 1.325 1.425 2.825T12 18q1.8-1.625 3.225-3.125t1.425-2.825q0-1.1-.75-1.825T14.1 9.5q-.65 0-1.188.263T12 10.45q-.375-.425-.937-.687T9.9 9.5q-1.05 0-1.8.725t-.75 1.825"
+                      />
+                    </svg>
+                  </a>
+                ))}
+              {starsBadgeUrl &&
+                repo &&
+                (isLink ? (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      window.open(repo, "_blank", "noopener,noreferrer")
+                    }}
+                    className="hover:opacity-80 transition-opacity"
+                    aria-label="GitHub repository"
+                  >
+                    <img src={starsBadgeUrl} alt="GitHub stars" className="h-4" />
+                  </button>
+                ) : (
+                  <a
+                    href={repo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img src={starsBadgeUrl} alt="GitHub stars" className="h-4" />
+                  </a>
+                ))}
+            </div>
+            {/* Toggle switch or Build Now button */}
+            {isLinkToggle ? (
+              <Switch
+                checked={props.isEnabled}
+                onCheckedChange={props.onToggle}
+                disabled={props.disabled}
+                labelLeft="Skip"
+                labelRight={props.enabledLabel || "Add"}
+                className={props.isEnabled ? "bg-green-600" : "bg-slate-600"}
+              />
+            ) : isLink ? (
               <button
                 onClick={e => {
                   e.preventDefault()
                   e.stopPropagation()
                   navigate(`/builds?plugin=${id}`)
                 }}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded hover:bg-cyan-400/20 transition-colors cursor-pointer shrink-0"
               >
                 <Zap className="w-3 h-3" />
                 Build Now
               </button>
-            </div>
-          )}
-          {/* Toggle switch - absolutely positioned in lower right */}
-          {isLinkToggle && (
-            <div className="absolute bottom-4 right-4 z-10">
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                <Switch
-                  checked={props.isEnabled}
-                  onCheckedChange={props.onToggle}
-                  disabled={props.disabled}
-                  labelLeft="Skip"
-                  labelRight={props.enabledLabel || "Add"}
-                  className={props.isEnabled ? "bg-green-600" : "bg-slate-600"}
-                />
-              </div>
-            </div>
-          )}
+            ) : null}
+          </div>
         </>
       )}
     </>
   )
 
-  const baseClassName = `relative flex ${isToggle ? "items-start gap-4" : "flex-col gap-3"} p-4 rounded-lg border-2 transition-colors h-full ${
+  const baseClassName = `relative flex ${isToggle ? "items-start gap-4" : "flex-col"} p-4 rounded-lg border-2 transition-colors h-full ${
     isIncompatible
       ? "border-slate-800 bg-slate-900/30 opacity-60 cursor-not-allowed"
       : prominent

@@ -11,12 +11,12 @@ export default function BuildsPage() {
   const pageContext = usePageContext()
   const urlSearchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null
   const cloneHash = urlSearchParams?.get("clone")
-  const buildId = urlSearchParams?.get("id")
+  const buildHash = urlSearchParams?.get("hash")
   const pluginParam = urlSearchParams?.get("plugin")
 
-  // If we have a build ID, show the build progress page
-  if (buildId) {
-    return <BuildViewPage buildHash={buildId} />
+  // If we have a build hash, show the build progress page
+  if (buildHash) {
+    return <BuildViewPage buildHash={buildHash} />
   }
 
   // Otherwise, show the builder (handles clone and plugin params)

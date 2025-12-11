@@ -4,6 +4,7 @@ import { api, internal } from "./_generated/api"
 import type { Doc, Id } from "./_generated/dataModel"
 import { internalMutation, mutation, query } from "./_generated/server"
 import { ArtifactType, getArtifactFilenameBase } from "./lib/filename"
+import { computeFlagsFromConfig } from "./lib/flags"
 import { generateSignedDownloadUrl } from "./lib/r2"
 import { buildFields } from "./schema"
 
@@ -31,18 +32,8 @@ export const getByHash = query({
   },
 })
 
-/**
- * Computes flags string from build config.
- * Only excludes modules explicitly marked as excluded (config[id] === true).
- */
-export function computeFlagsFromConfig(config: Doc<"builds">["config"]): string {
-  // Sort modules to ensure consistent order
-  return Object.keys(config.modulesExcluded)
-    .sort()
-    .filter(module => config.modulesExcluded[module])
-    .map((moduleExcludedName: string) => `-D${moduleExcludedName}=1`)
-    .join(" ")
-}
+// Re-export for backward compatibility
+export { computeFlagsFromConfig } from "./lib/flags"
 
 /**
  * Encodes a byte array to base62 string.
@@ -77,16 +68,39 @@ async function computeBuildHashInternal(
   version: string,
   target: string,
   flags: string,
-  plugins: string[]
+  plugins: string[],
+  pluginConfig?: Record<string, Record<string, boolean>>
 ): Promise<string> {
   // Input is now the exact parameters used for the build
   // Sort plugins array for consistent hashing
   const sortedPlugins = [...plugins].sort()
+  // Sort plugin config for consistent hashing
+  const sortedPluginConfig = pluginConfig
+    ? Object.keys(pluginConfig)
+        .sort()
+        .reduce(
+          (acc, pluginSlug) => {
+            const sortedOptions = Object.keys(pluginConfig[pluginSlug])
+              .sort()
+              .reduce(
+                (opts, optKey) => {
+                  opts[optKey] = pluginConfig[pluginSlug][optKey]
+                  return opts
+                },
+                {} as Record<string, boolean>
+              )
+            acc[pluginSlug] = sortedOptions
+            return acc
+          },
+          {} as Record<string, Record<string, boolean>>
+        )
+    : undefined
   const input = JSON.stringify({
     version,
     target,
     flags,
     plugins: sortedPlugins,
+    pluginConfig: sortedPluginConfig,
   })
 
   // Use Web Crypto API for SHA-256 hashing
@@ -103,10 +117,13 @@ async function computeBuildHashInternal(
  * Computes buildHash from build config.
  * This is the single source of truth for build hash computation.
  */
-export async function computeBuildHash(config: Doc<"builds">["config"]): Promise<{ hash: string; flags: string }> {
-  const flags = computeFlagsFromConfig(config)
+export async function computeBuildHash(
+  config: Doc<"builds">["config"],
+  registryData?: Record<string, { configOptions?: Record<string, { define: string }> }>
+): Promise<{ hash: string; flags: string }> {
+  const flags = computeFlagsFromConfig(config, registryData)
   const plugins = config.pluginsEnabled ?? []
-  const hash = await computeBuildHashInternal(config.version, config.target, flags, plugins)
+  const hash = await computeBuildHashInternal(config.version, config.target, flags, plugins, config.pluginConfigs)
   return { hash, flags }
 }
 
@@ -185,6 +202,8 @@ export const ensureBuildFromConfig = mutation({
     version: v.string(),
     modulesExcluded: v.optional(v.record(v.string(), v.boolean())),
     pluginsEnabled: v.optional(v.array(v.string())),
+    pluginConfigs: v.optional(v.record(v.string(), v.record(v.string(), v.boolean()))),
+    registryData: v.optional(v.any()),
     profileName: v.optional(v.string()),
     profileDescription: v.optional(v.string()),
   },
@@ -195,10 +214,15 @@ export const ensureBuildFromConfig = mutation({
       modulesExcluded: args.modulesExcluded ?? {},
       target: args.target,
       pluginsEnabled: args.pluginsEnabled,
+      pluginConfigs: args.pluginConfigs,
     }
 
     // Compute build hash (single source of truth)
-    const { hash: buildHash, flags } = await computeBuildHash(config)
+    // Registry data is optional - diagnostics works for all plugins without registry lookup
+    const registryData = args.registryData as
+      | Record<string, { configOptions?: Record<string, { define: string }> }>
+      | undefined
+    const { hash: buildHash, flags } = await computeBuildHash(config, registryData)
 
     const existingBuild = await ctx.db
       .query("builds")

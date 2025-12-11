@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { TARGETS } from "@/constants/targets"
 import type { Doc } from "@/convex/_generated/dataModel"
 import { ArtifactType, getArtifactFilenameBase } from "@/convex/lib/filename"
+import { computeFlagsFromConfig } from "@/convex/lib/flags"
 import modulesData from "@/convex/modules.json"
 import { getImplicitDependencies, humanizeStatus } from "@/lib/utils"
 import registryData from "@/public/registry.json"
@@ -48,7 +49,7 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
       ? `https://github.com/MeshEnvy/mesh-forge/actions/runs/${build.githubRunId}`
       : null
 
-  const shareUrl = `${window.location.origin}/builds?clone=${build.buildHash}`
+  const shareUrl = `${window.location.origin}/builds?hash=${build.buildHash}`
 
   const handleShare = async () => {
     try {
@@ -64,7 +65,10 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
   }
 
   const generateBashCommand = (): string => {
-    const flags = computeFlagsFromConfig(build.config)
+    const flags = computeFlagsFromConfig(
+      build.config,
+      registryData as Record<string, { configOptions?: Record<string, { define: string }> }>
+    )
     const target = build.config.target
     const version = build.config.version
     const plugins = build.config.pluginsEnabled || []
@@ -102,9 +106,8 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
     }
 
     // Set build flags and build
-    if (flags) {
-      commands.push(`export PLATFORMIO_BUILD_FLAGS="${flags}"`)
-    }
+    // Always export PLATFORMIO_BUILD_FLAGS (even if empty) so users can see what was used
+    commands.push(`export PLATFORMIO_BUILD_FLAGS="${flags || ""}"`)
     commands.push(`pio run -e ${target}`)
 
     return commands.join("\n")
@@ -127,15 +130,6 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
         description: "Please copy the command manually",
       })
     }
-  }
-
-  // Compute build flags from config (same logic as computeFlagsFromConfig in convex/builds.ts)
-  const computeFlagsFromConfig = (config: typeof build.config): string => {
-    return Object.keys(config.modulesExcluded)
-      .sort()
-      .filter(module => config.modulesExcluded[module])
-      .map((moduleExcludedName: string) => `-D${moduleExcludedName}=1`)
-      .join(" ")
   }
 
   const handleRetry = async () => {
@@ -216,10 +210,10 @@ export function BuildProgress({ build, isAdmin = false, onRetry, showActions = t
               <h2 className="text-2xl font-semibold mb-2 flex items-center gap-2">
                 {getStatusIcon()}
                 <a
-                  href={`/builds?id=${build.buildHash}`}
+                  href={`/builds?hash=${build.buildHash}`}
                   onClick={e => {
                     e.preventDefault()
-                    navigate(`/builds?id=${build.buildHash}`)
+                    navigate(`/builds?hash=${build.buildHash}`)
                   }}
                   className="hover:text-cyan-400 transition-colors"
                 >

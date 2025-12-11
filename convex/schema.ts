@@ -7,6 +7,7 @@ export const buildConfigFields = {
   modulesExcluded: v.record(v.string(), v.boolean()),
   target: v.string(),
   pluginsEnabled: v.optional(v.array(v.string())),
+  pluginConfigs: v.optional(v.record(v.string(), v.record(v.string(), v.boolean()))),
 }
 
 export const profileFields = {
